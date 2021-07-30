@@ -5,7 +5,7 @@ from pathlib import Path, PurePath
 from typing import Dict, Union
 
 import torch
-from torch import nn
+from torch import nn, Tensor
 from torch.optim import Adam
 from tqdm import tqdm
 
@@ -47,7 +47,8 @@ class Trainer:
         """
         Checks if self.args namespace contains all the required args
         """
-        args = ['lr_generator', 'lr_discriminator', 'lambda_d', 'lambda_g', 'experiments', 'epochs', 'patience']
+        args = ['lr_generator', 'lr_discriminator', 'lambda_d', 'lambda_g', 'experiments', 'epochs', 'patience',
+                'gpu', 'precision']
         for arg in args:
             assert hasattr(self.args, arg), f'Error, missing arg: {arg}'
 
@@ -126,11 +127,19 @@ class Trainer:
             self.best_checkpoint = path
         return path
 
+    def device(self, x: Tensor) -> Tensor:
+        if self.args.gpu:
+            x = x.cuda()
+        if self.args.precision == 'half':
+            x = x.half()
+        return x
+
     def run(self):
         for epoch in tqdm(range(self.args.epochs), desc='epochs', position=0):
             if self.metric.val.patience >= self.args.patience:
                 return
             for audio, pose in tqdm(self.data.train, desc='batch', leave=False, position=1):
+                audio, pose = self.device(audio)
                 results = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
             self.metric.train.epoch_step()

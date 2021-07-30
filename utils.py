@@ -49,31 +49,6 @@ def set_up_args() -> ArgumentParser:
     """
     parser = ArgumentParser()
     parser.add_argument('--gpu', type=str, default=os.environ['NV_GPU'], help='Comma separated list of CUDA visible GPUs')
-    parser.add_argument('--optimizer', type=str, default='adam', choices=['adam', 'sgd', 'rms_prop'],
-                        help='Name of optimizer')
-    parser.add_argument('--lr', type=float, default=1e-4)
-    parser.add_argument('--loss_alpha', type=float, default=0.13)
-    parser.add_argument('--loss_beta', type=float, default=1)
-    parser.add_argument('--batch_size', type=float, default=16)
-    parser.add_argument('--patience', type=int, default=25)
-    parser.add_argument('--dataset', type=str, choices=['FullBoneShape', 'MultimodalBoneShape'], default='FullBoneShape')
-    parser.add_argument('--precision', type=str, default='full')
-    parser.add_argument('--noise', type=float, default=0.)
-    parser.add_argument('--epochs', type=int, default=1000)
-    parser.add_argument('--num_workers', type=int, default=4)
-    parser.add_argument('--model', type=str, choices=['didn', 'unet'], default='didn')
-    parser.add_argument('--didn_residual', type=str2bool, default=False)
-    parser.add_argument('--didn_res_blocks', type=int, default=1)
-    parser.add_argument('--unet_depth', type=int, default=8)
-    parser.add_argument('--unet_drop_prob', type=float, default=0.05)
-    parser.add_argument('--unet_channels', type=int, default=16)
-    parser.add_argument('--bone', type=str, default='Femur', choices=['Femur', 'Tibia', 'Patella'])
-    parser.add_argument('--checkpoint', type=Path, default=None)
-    parser.add_argument('--contrastive_trigger', type=float, default=0.5, help='The proportion of impatience reached ' +
-                                                                               'at which contrastive loss starts. ')
-    parser.add_argument('--logs_dir', type=Path, default=Path('/data/VirtualAging/experiments/aging_beta/'))
-    parser.add_argument('--message', type=str, default='')
-    parser.add_argument('--delta_shape', type=str2bool, default=True)
     return parser
 
 
