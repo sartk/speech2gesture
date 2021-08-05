@@ -8,8 +8,10 @@ import torch
 from torch import nn, Tensor
 from torch.optim import Adam
 from tqdm import tqdm
+from torch.utils.data import DataLoader
 
 import utils
+from dataset import WavBVHDataset
 from model import AudioToPose, PoseDiscriminator
 from metrics import MetricCollector
 
@@ -26,9 +28,9 @@ class Trainer:
         self.args = args
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.check_required_args()
-        self.data, input_shape, pose_shape = self.get_dataloaders()
-        self.generator = AudioToPose(input_shape=input_shape, pose_shape=pose_shape)
-        self.discriminator = PoseDiscriminator(pose_shape=pose_shape)
+        self.data, shapes = self.get_data()
+        self.generator = AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
+        self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
         self.loss = Trainer.get_losses()
         self.optim = self.get_optimizers()
         self.metric = self.get_metric_collectors()
@@ -54,18 +56,27 @@ class Trainer:
 
     @staticmethod
     def get_losses():
+        """
+        Returns a namespace of required loss functions.
+        """
         losses = Namespace()
         losses.l1 = nn.L1Loss()
         losses.mse = nn.MSELoss()
         return losses
 
     def get_optimizers(self):
+        """
+        Returns a namespace of optimizers.
+        """
         optim = Namespace()
         optim.generator = Adam(params=self.generator.parameters(), lr=self.args.lr_generator)
         optim.discriminator = Adam(params=self.discriminator.parameters(), lr=self.args.lr_discriminator)
         return optim
 
     def get_metric_collectors(self):
+        """
+        Returns a namespace of Metric Collectors.
+        """
         metric = Namespace()
         metric.train = MetricCollector(phase='train', patience_monitor=lambda summary: summary['generator_loss'],
                                        trainer=self)
@@ -73,46 +84,55 @@ class Trainer:
                                        trainer=self)
         return metric
 
-    def get_dataloaders(self):
-        return ..., ..., ...
+    def get_data(self):
+        """
+        Returns  the data.
+        """
+        dataloader = Namespace()
+        shapes = None
+        if self.args.dataset == 'WavBVH':
+            source = WavBVHDataset
+        else:
+            source = WavKeypointsDataset
+        for mode in ['train', 'val', 'test']:
+            dataset = source(self.args.dataset, group=mode)
+            setattr(dataloader, mode, DataLoader(dataset=dataset,
+                                                 num_workers=self.args.num_workers, batch_size=self.args.batch_size))
+            if shapes is None:
+                shapes = [item.shape[-2:] for item in dataset[0]]
+        return dataloader, shapes
 
     def loop(self, audio, real_pose, mode='train'):
-
-        if mode == 'train':
-            self.generator.train()
-            self.discriminator.train()
-        else:
-            self.generator.eval()
-            self.discriminator.eval()
-
+        """
+        A single batch cycle.
+        """
+        # Run Model
         pred_pose = self.generator(audio)
         discriminator_pred = self.discriminator(pred_pose)
         discriminator_real = self.discriminator(real_pose)
-
-        discriminator_loss = self.loss.mse(torch.ones_like(discriminator_real), discriminator_real) + \
-                             self.args.lambda_d * self.loss.mse(torch.zeros_like(discriminator_pred),
-                                                                discriminator_pred)
-
+        # Update Discriminator
+        self.optim.discriminator.zero_grad()
+        real_pose_loss = self.loss.mse(torch.ones_like(discriminator_real), discriminator_real)
+        fake_pose_loss = self.loss.mse(torch.zeros_like(discriminator_pred), discriminator_pred)
+        discriminator_loss = real_pose_loss + fake_pose_loss
+        if mode == 'train':
+            discriminator_loss.backward()
+            self.optim.discriminator.step()
+        # Update Generator
+        self.optim.generator.zero_grad()
         l1_loss = self.loss.l1(pred_pose, real_pose)
         adversarial_loss = self.loss.mse(torch.ones_like(discriminator_pred), discriminator_pred)
         generator_loss = l1_loss + adversarial_loss
-
-        self.optim.discriminator.zero_grad()
-        discriminator_loss.backward()
-
-        self.optim.generator.zero_grad()
-        generator_loss.backward()
-
-        self.optim.discriminator.step()
-        self.optim.generator.step()
-
+        if mode == 'train':
+            generator_loss.backward()
+            self.optim.generator.step()
+        # Save Results
         results = {
-                'l1_loss': l1_loss,
-                'adversarial_loss': adversarial_loss,
+                'generator_l1_loss': l1_loss,
+                'generator_adversarial_loss': adversarial_loss,
                 'discriminator_loss': discriminator_loss
         }
-
-        return results
+        return results, pred_pose
 
     def save_checkpoint(self, note='', path: Path = None, best=False) -> Path:
         """
@@ -128,6 +148,9 @@ class Trainer:
         return path
 
     def device(self, x: Tensor) -> Tensor:
+        """
+        Moves a tensor to the right device.
+        """
         if self.args.gpu:
             x = x.cuda()
         if self.args.precision == 'half':
@@ -135,16 +158,24 @@ class Trainer:
         return x
 
     def run(self):
+        """
+        Runs the training loop.
+        """
         for epoch in tqdm(range(self.args.epochs), desc='epochs', position=0):
             if self.metric.val.patience >= self.args.patience:
                 return
+            self.generator.train()
+            self.discriminator.train()
             for audio, pose in tqdm(self.data.train, desc='batch', leave=False, position=1):
-                audio, pose = self.device(audio)
-                results = self.loop(audio, pose, 'train')
+                audio, pose = self.device(audio), self.device(pose)
+                results, _ = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
             self.metric.train.epoch_step()
+            self.generator.eval()
+            self.discriminator.eval()
             for audio, pose in tqdm(self.data.val, desc='batch', leave=False, position=1):
-                results = self.loop(audio, pose, 'val')
+                audio, pose = self.device(audio), self.device(pose)
+                results, pred_pose = self.loop(audio, pose, 'val')
                 self.metric.val.update(results)
             self.metric.val.epoch_step()
             self.checkpoint.update({

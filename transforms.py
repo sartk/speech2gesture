@@ -110,7 +110,7 @@ class AudioToLogMelSpec(Transform):
         spectr = librosa.feature.melspectrogram(audio, sr=sample_rate, window=scipy.signal.hanning,
                                                 # win_length=int(window_length * sample_rate),
                                                 hop_length=int(self.kwargs['window_length'] * sample_rate / 2),
-                                                fmax=7500, fmin=100, n_mels=self.kwargs['dim'])
-        eps = 1e-10
+                                                fmax=7500, fmin=125, n_mels=self.kwargs['dim'])
+        eps = 1e-6
         log_spectr = np.log(abs(spectr) + eps)
         return np.transpose(log_spectr)
