@@ -41,7 +41,7 @@ class Trainer:
         self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
         self.tensorboard_dir.mkdir()
         self.checkpoints_dir.mkdir()
-        self.log_file = args.experiments_dir / 'log.txt'
+        self.log_file = self.experiment_dir / 'log.txt'
         self.log = utils.logger(self.log_file)
         self.best_checkpoint: Union[Path, None] = None
         self.checkpoint = dict()
