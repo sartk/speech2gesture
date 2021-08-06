@@ -31,7 +31,7 @@ class Trainer:
         self.check_required_args()
         self.data, shapes = self.get_data()
         self.generator = AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
-        self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
+        self.discriminator = PoseDiscriminator(pose_shape=shapes)
         self.loss = Trainer.get_losses()
         self.optim = self.get_optimizers()
         self.metric = self.get_metric_collectors()
