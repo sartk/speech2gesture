@@ -56,10 +56,11 @@ class WavBVHDataset(Dataset):
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
             for i, t in enumerate(windows):
                 dest = self.save_dir / f'{name}_{i}.pt'
-                #if dest.is_file():
-                #    continue
                 audio = self.mel_spec.apply(librosa.load(audio_file, offset=t, duration=self.clip_duration, mono=True))
                 gesture = exp_map[frame:frame + frame_window, :]
+                if gesture.shape[0] != frame_window:
+                    print('skipping', dest)
+                    continue
                 torch.save({'audio': torch.from_numpy(audio), 'gesture': torch.from_numpy(gesture)}, dest)
                 dataset.append(dest)
                 frame += frame_step
