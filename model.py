@@ -13,7 +13,6 @@ class AudioToPose(nn.Module):
     def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int]):
         super(AudioToPose, self).__init__()
         frames, pose_dof = pose_shape
-        print(pose_shape)
         h, w = input_shape
         self.audio_encoder = nn.ModuleList([
             ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
@@ -111,6 +110,7 @@ class AudioToPose(nn.Module):
         skip_connections.clear()
         for conv_block in self.logits:
             x = conv_block(x)
+        print('pose pred', x.shape)
         return x
 
 
