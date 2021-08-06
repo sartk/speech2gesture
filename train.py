@@ -195,6 +195,9 @@ class Trainer:
                     bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
                     with open(samples_dir / f'Sample_{i}.bvh', 'w+') as f:
                         f.write(bvh)
+                    bvh_real = self.mocap_pipeline.invert(pose[0].permute(1, 0).numpy())
+                    with open(samples_dir / f'Sample_{i}_Real.bvh', 'w+') as f:
+                        f.write(bvh_real)
                 self.metric.val.update(results)
             self.metric.val.epoch_step()
             self.checkpoint.update({
