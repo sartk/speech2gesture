@@ -275,4 +275,4 @@ class ConvNormRelu1d(ConvNormRelu):
 
 def cdiv(a, b):
     # ceiling division
-    return -(-a // b)
+    return -(-int(a) // int(b))
