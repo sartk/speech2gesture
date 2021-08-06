@@ -25,7 +25,7 @@ class WavBVHDataset(Dataset):
         self.motion_dir: Path = dataset / 'raw_data' / group / 'Motion'
         self.save_dir: Path = dataset / 'processed_data' / group
         self.save_dir.mkdir(parents=True, exist_ok=True)
-        self.dataset_path: Path = dataset / 'info.pickle'
+        self.dataset_path: Path = dataset / '{group}_info.pickle'
         self.gesture_fps: Number = gesture_fps
         self.clip_duration: int = clip_duration
         self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
