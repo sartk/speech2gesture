@@ -47,7 +47,7 @@ class WavBVHDataset(Dataset):
                 print(f'not found: {audio_file}')
                 continue
             audio_end = int(self.clip_duration * (librosa.get_duration(filename=str(audio_file)) // self.clip_duration))
-            if (self.save_dir / f'{name}_{audio_end}.pt').is_file():
+            if (self.save_dir / f'{name}_0.pt').is_file():
                 print(f'skipping {name}')
                 continue
             exp_map = self.mocap_pipeline.apply(bvh_file)
