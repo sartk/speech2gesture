@@ -12,7 +12,7 @@ class AudioToPose(nn.Module):
 
     def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int]):
         super(AudioToPose, self).__init__()
-        frames, pose_dof = pose_shape
+        h, w = pose_shape
         self.audio_encoder = nn.ModuleList([
             ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
             ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
