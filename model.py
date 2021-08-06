@@ -13,6 +13,7 @@ class AudioToPose(nn.Module):
     def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int]):
         super(AudioToPose, self).__init__()
         frames, pose_dof = pose_shape
+        print(frames)
         h, w = input_shape
         self.audio_encoder = nn.ModuleList([
             ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
@@ -118,9 +119,9 @@ class PoseDiscriminator(nn.Module):
     def __init__(self, pose_shape, ndf=64, n_downsampling=2):
         super(PoseDiscriminator, self).__init__()
         frames, pose_dof = pose_shape
-        padding = PoseDiscriminator._compute_padding(pose_dof, 4, 2, cdiv(pose_dof, 2))
+        padding = PoseDiscriminator._compute_padding(frames, 4, 2, cdiv(frames, 2))
         self.padding1 = (padding // 2, padding - padding // 2)
-        self.conv1 = nn.Conv1d(in_channels=frames, out_channels=ndf, kernel_size=(4,), stride=(2,))
+        self.conv1 = nn.Conv1d(in_channels=pose_dof, out_channels=ndf, kernel_size=(4,), stride=(2,))
         self.relu1 = nn.LeakyReLU(negative_slope=0.2)
         self.conv_blocks = nn.ModuleList()
 
