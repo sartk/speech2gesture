@@ -49,7 +49,6 @@ class WavBVHDataset(Dataset):
             audio_end = int(self.clip_duration * ((librosa.get_duration(filename=str(audio_file)) // self.clip_duration)
                                                   - 1))
             windows = range(0, audio_end, self.clip_duration // 2)
-            print(self.save_dir / f'{name}_{len(windows) - 1}.pt')
             if (self.save_dir / f'{name}_{len(windows) - 1}.pt').is_file():
                 continue
             exp_map = self.mocap_pipeline.apply(bvh_file)

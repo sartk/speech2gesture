@@ -52,14 +52,21 @@ class MocapDataToExpMap(Transform):
 
     def invert(self, exp_map, back_to_deg=True) -> ArrayLike:
         frames = np.zeros(exp_map.shape)
+        assert exp_map.shape[1] == 174
         for i in range(exp_map.shape[0]):
             for j in range(3):
                 frames[i, j] = exp_map[i, j]
             for j in range(3, exp_map.shape[1], 3):
-                scaled = np.array([frames[i, j], frames[i, j + 1], frames[i, j + 2]])
+                scaled = np.array([exp_map[i, j], exp_map[i, j + 1], exp_map[i, j + 2]])
                 theta = np.linalg.norm(scaled)
-                vector = scaled / theta
-                frames[i, j], frames[i, j + 1], frames[i, j + 2] = t3d.euler.axangle2euler(vector, theta, 'rzxy')
+                if theta == 0:
+                    z, x, y = 0., 0., 0.
+                else:
+                    vector = scaled / theta
+                    z, x, y = t3d.euler.axangle2euler(vector, theta, 'rzxy')
+                if back_to_deg:
+                    z, x, y = math.degrees(z), math.degrees(x), math.degrees(y)
+                frames[i, j], frames[i, j + 1], frames[i, j + 2] = z, x, y
         return frames
 
 
@@ -79,7 +86,7 @@ class BVHtoMocapData(Transform):
     def invert(self, mocap_data):
         content = self.header + 'MOTION\n' + f'Frames: {mocap_data.shape[0]}\n' + 'Frame Time:     0.0166667\n'
         for i in range(mocap_data.shape[0]):
-            content += ' '.join(mocap_data[i].tolist()) + '\n'
+            content += ' '.join(map(str, mocap_data[i].tolist())) + '\n'
         return content
 
 
@@ -96,7 +103,7 @@ class Pipeline:
         return x
 
     def invert(self, x):
-        for f in self.transforms:
+        for f in reversed(self.transforms):
             x = f.invert(x)
         return x
 
