@@ -38,6 +38,8 @@ class Trainer:
         self.generator.float()
         self.discriminator.float()
         self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
+        with open('mocap_header.txt', 'r') as f:
+            self.mocap_pipeline.transforms[0].header = f.read()
         self.loss = Trainer.get_losses()
         self.optim = self.get_optimizers()
         self.metric = self.get_metric_collectors()
