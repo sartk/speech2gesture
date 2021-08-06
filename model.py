@@ -118,6 +118,7 @@ class PoseDiscriminator(nn.Module):
     def __init__(self, pose_shape, ndf=64, n_downsampling=2):
         super(PoseDiscriminator, self).__init__()
         frames, pose_dof = pose_shape
+        print(pose_dof, frames)
         padding = PoseDiscriminator._compute_padding(frames, 4, 2, cdiv(frames, 2))
         self.padding1 = (padding // 2, padding - padding // 2)
         self.conv1 = nn.Conv1d(in_channels=pose_dof, out_channels=ndf, kernel_size=(4,), stride=(2,))
@@ -155,6 +156,7 @@ class PoseDiscriminator(nn.Module):
     def forward(self, x):
         print('pred shape', x.shape)
         x = F.pad(x, self.padding1)
+        print('post-pad shape', x.shape)
         x = self.conv1(x)
         x = self.relu1(x)
         for conv_block in self.conv_blocks:
