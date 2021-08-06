@@ -118,8 +118,8 @@ class PoseDiscriminator(nn.Module):
     def __init__(self, pose_shape, ndf=64, n_downsampling=2):
         super(PoseDiscriminator, self).__init__()
         frames, pose_dof = pose_shape
-        print(pose_dof, frames)
         padding = PoseDiscriminator._compute_padding(frames, 4, 2, cdiv(frames, 2))
+        print(padding+frames)
         self.padding1 = (padding // 2, padding - padding // 2)
         self.conv1 = nn.Conv1d(in_channels=pose_dof, out_channels=ndf, kernel_size=(4,), stride=(2,))
         self.relu1 = nn.LeakyReLU(negative_slope=0.2)
