@@ -153,6 +153,7 @@ class PoseDiscriminator(nn.Module):
         return kernel + (out_size - 1) * stride - in_size
 
     def forward(self, x):
+        print('pred shape', x.shape)
         x = F.pad(x, self.padding1)
         x = self.conv1(x)
         x = self.relu1(x)
