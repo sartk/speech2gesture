@@ -100,6 +100,8 @@ class Trainer:
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size))
             if shapes is None:
+                for i in range(10):
+                    print(dataset[i][1].shape[-2:])
                 shapes = [item.shape[-2:] for item in dataset[0]]
         return dataloader, shapes
 
