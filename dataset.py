@@ -56,8 +56,8 @@ class WavBVHDataset(Dataset):
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
             for i, t in enumerate(windows):
                 dest = self.save_dir / f'{name}_{i}.pt'
-                if dest.is_file():
-                    continue
+                #if dest.is_file():
+                #    continue
                 audio = self.mel_spec.apply(librosa.load(audio_file, offset=t, duration=self.clip_duration, mono=True))
                 gesture = exp_map[frame:frame + frame_window, :]
                 if audio.shape[0] != frame_window:
