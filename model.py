@@ -14,7 +14,7 @@ class AudioToPose(nn.Module):
         super(AudioToPose, self).__init__()
         frames, pose_dof = pose_shape
         h, w = input_shape
-        self.audio_encoder = [
+        self.audio_encoder = nn.ModuleList([
             ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
             ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
                            output_shape=(cdiv(h, 2), cdiv(w, 2))),
@@ -32,55 +32,57 @@ class AudioToPose(nn.Module):
                            input_shape=(cdiv(h, 8), cdiv(w, 8))),
             ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
                            padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
-        ]
+        ])
         self.resize = lambda t: torch.squeeze(
             F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
-        self.unet_encoder = OrderedDict([
-            ('fifth_block', nn.Sequential(
+        self.unet_encoder_labels = [5, 6, 7, 8, 9, 10]
+        self.unet_encoder = nn.ModuleList([
+            nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(frames,)),
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(frames,)))),
-            ('sixth_block', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                           input_shape=(frames,), output_shape=(cdiv(frames, 2),))),
-            ('seventh_block', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                             input_shape=(cdiv(frames, 2),), output_shape=(cdiv(frames, 4),))),
-            ('eighth_block', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                            input_shape=(cdiv(frames, 4),), output_shape=(cdiv(frames, 8),))),
-            ('ninth_block', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                           input_shape=(cdiv(frames, 8),), output_shape=(cdiv(frames, 16),))),
-            ('tenth_block', nn.Sequential(ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                               input_shape=(frames,))),
+            ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                           input_shape=(frames,), output_shape=(cdiv(frames, 2),)),
+            ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                             input_shape=(cdiv(frames, 2),), output_shape=(cdiv(frames, 4),)),
+            ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                            input_shape=(cdiv(frames, 4),), output_shape=(cdiv(frames, 8),)),
+            ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                           input_shape=(cdiv(frames, 8),), output_shape=(cdiv(frames, 16),)),
+            nn.Sequential(ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
                                                          input_shape=(cdiv(frames, 16),),
                                                          output_shape=(cdiv(frames, 32),)),
-                                          nn.Upsample(size=(cdiv(frames, 16),))))
+                                          nn.Upsample(size=(cdiv(frames, 16),)))
         ])
-        self.unet_decoder = OrderedDict([
-            ('ninth_block', nn.Sequential(
+        self.unet_decoder_labels = [9, 8, 7, 6, 5]
+        self.unet_decoder = nn.ModuleList([
+            nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(frames, 16),)),
-                nn.Upsample(size=(cdiv(frames, 8),)))),
-            ('eighth_block', nn.Sequential(
+                nn.Upsample(size=(cdiv(frames, 8),))),
+            nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(frames, 8),)),
-                nn.Upsample(size=(cdiv(frames, 4),)))),
-            ('seventh_block', nn.Sequential(
+                nn.Upsample(size=(cdiv(frames, 4),))),
+            nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(frames, 4),)),
-                nn.Upsample(size=(cdiv(frames, 2),)))),
-            ('sixth_block', nn.Sequential(
+                nn.Upsample(size=(cdiv(frames, 2),))),
+            nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(frames, 2),)),
-                nn.Upsample(size=(frames,)))),
-            ('fifth_block', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                                           input_shape=(frames,)))
+                nn.Upsample(size=(frames,))),
+            ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                                           input_shape=(frames,))
         ])
-        self.logits = [
+        self.logits = nn.ModuleList([
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, input_shape=(frames,)),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, input_shape=(frames,)),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, input_shape=(frames,)),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, input_shape=(frames,)),
             nn.Conv1d(in_channels=256, out_channels=pose_dof, kernel_size=(1,), stride=(1,))
-        ]
+        ])
 
         def weight_init(m):
             if m == self.logits[-1]:
@@ -99,10 +101,10 @@ class AudioToPose(nn.Module):
             x = conv_block(x)
         x = self.resize(x)
         skip_connections = dict()
-        for name, conv_block in self.unet_encoder.items():
+        for name, conv_block in zip(self.unet_encoder_labels, self.unet_encoder):
             x = conv_block(x)
             skip_connections[name] = x
-        for name, conv_block in self.unet_decoder.items():
+        for name, conv_block in zip(self.unet_decoder_labels, self.unet_decoder):
             x += skip_connections[name]
             x = conv_block(x)
         skip_connections.clear()
@@ -121,7 +123,7 @@ class PoseDiscriminator(nn.Module):
         self.padding1 = (padding // 2, padding - padding // 2)
         self.conv1 = nn.Conv1d(in_channels=frames, out_channels=ndf, kernel_size=(4,), stride=(2,))
         self.relu1 = nn.LeakyReLU(negative_slope=0.2)
-        self.conv_blocks = []
+        self.conv_blocks = nn.ModuleList()
 
         in_channels = ndf
         input_size = cdiv(pose_dof, 2)
