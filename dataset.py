@@ -50,6 +50,8 @@ class WavBVHDataset(Dataset):
             frame = 0
             audio_end = int(self.clip_duration * (librosa.get_duration(filename=str(audio_file)) // self.clip_duration))
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
+            if (self.save_dir / f'{name}_0.pt').is_file() and (self.save_dir / f'{name}_{audio_end}.pt').is_file():
+                continue
             for i, t in enumerate(range(0, audio_end, self.clip_duration // 2)):
                 dest = self.save_dir / f'{name}_{i}.pt'
                 if dest.is_file():
