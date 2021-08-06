@@ -57,7 +57,7 @@ def set_up_args() -> ArgumentParser:
     parser.add_argument('--lambda_g', type=float, default=1)
     parser.add_argument('--experiments', type=Path, default='C:/Users/Pinscreen/Dev/sarthak/speech2gesture/experiments/')
     parser.add_argument('--epochs', type=int, default=500)
-    parser.add_argument('--patience', type=int, default=25)
+    parser.add_argument('--patience', type=int, default=30)
     parser.add_argument('--data', type=Path, default='C:/Users/Pinscreen/Dev/sarthak/speech2gesture/data/TrinityDataset/')
     parser.add_argument('--precision', type=str, default='full')
     parser.add_argument('--num_workers', type=int, default=4)

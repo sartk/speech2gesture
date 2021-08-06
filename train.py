@@ -140,6 +140,7 @@ class Trainer:
         results = {
                 'generator_l1_loss': l1_loss,
                 'generator_adversarial_loss': adversarial_loss,
+                'generator_loss': generator_loss,
                 'discriminator_loss': discriminator_loss
         }
         return results, pred_pose
