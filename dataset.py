@@ -23,7 +23,7 @@ class WavBVHDataset(Dataset):
     def __init__(self, dataset: Path, gesture_fps=60, clip_duration=4, group='train', transcripts=False):
         self.audio_dir: Path = dataset / 'raw_data' / group / 'Audio'
         self.motion_dir: Path = dataset / 'raw_data' / group / 'Motion'
-        self.save_dir: Path = dataset / group / 'processed_data'
+        self.save_dir: Path = dataset / 'processed_data' / group
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.dataset_path: Path = dataset / 'info.pickle'
         self.gesture_fps: Number = gesture_fps
