@@ -58,3 +58,20 @@ class WavBVHDataset(Dataset):
                 frame += frame_step
         return dataset
 
+"""
+for i, audio_file in enumerate(sorted(Path('C:/Users/Pinscreen/Dev/sarthak/speech2gesture/data/TrinityDataset/raw_data/train/Audio').iterdir())):
+     src_bvh = str(audio_file).replace('Audio', 'Motion').replace('.wav', '.bvh')
+     src_txt = str(audio_file).replace('Audio', 'Transcripts').replace('.wav', '.json')
+     if i < 23:
+             continue
+     elif i < 28:
+             tar = 'val'
+     else:
+             tar = 'test'
+     tar_wav = str(audio_file).replace('train', tar)
+     tar_bvh = src_bvh.replace('train', tar)
+     tar_txt = src_txt.replace('train', tar)
+     shutil.move(str(audio_file), tar_wav)
+     shutil.move(src_bvh, tar_bvh)
+     shutil.move(src_txt, tar_txt)
+"""

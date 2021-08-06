@@ -7,6 +7,7 @@ from typing import Iterable, Dict, Tuple, Callable
 import torch
 from torch import Tensor
 from torch.utils.data import DataLoader
+from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 Loss = Callable[[Tensor, Tensor], Tensor]
@@ -49,6 +50,17 @@ def set_up_args() -> ArgumentParser:
     """
     parser = ArgumentParser()
     parser.add_argument('--gpu', type=str, default=os.environ['NV_GPU'], help='Comma separated list of CUDA visible GPUs')
+    parser.add_argument('--lr_generator', type=float, default=1e-4)
+    parser.add_argument('--lr_discriminator', type=float, default=1e-4)
+    parser.add_argument('--lambda_d', type=float, default=1)
+    parser.add_argument('--lambda_g', type=float, default=1)
+    parser.add_argument('--experiments', type=PurePath, default='experiments')
+    parser.add_argument('--epochs', type=int, default=500)
+    parser.add_argument('--patience', type=int, default=25)
+    parser.add_argument('--data', type=PurePath, default='data/TrinityData')
+    parser.add_argument('--precision', type=str, default='full')
+    parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=16)
     return parser
 
 

@@ -50,7 +50,7 @@ class Trainer:
         Checks if self.args namespace contains all the required args
         """
         args = ['lr_generator', 'lr_discriminator', 'lambda_d', 'lambda_g', 'experiments', 'epochs', 'patience',
-                'gpu', 'precision']
+                'gpu', 'precision', 'dataset', 'data', 'num_workers', 'batch_size']
         for arg in args:
             assert hasattr(self.args, arg), f'Error, missing arg: {arg}'
 
@@ -95,7 +95,7 @@ class Trainer:
         else:
             source = WavKeypointsDataset
         for mode in ['train', 'val', 'test']:
-            dataset = source(self.args.dataset, group=mode)
+            dataset = WavBVHDataset(self.args.data, group=mode)
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size))
             if shapes is None:
