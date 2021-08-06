@@ -32,6 +32,8 @@ class Trainer:
         self.data, shapes = self.get_data()
         self.generator = AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
         self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
+        self.generator.float()
+        self.discriminator.float()
         self.loss = Trainer.get_losses()
         self.optim = self.get_optimizers()
         self.metric = self.get_metric_collectors()
@@ -100,8 +102,6 @@ class Trainer:
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size))
             if shapes is None:
-                for i in range(10):
-                    print(dataset[i][1].shape[-2:])
                 shapes = [item.shape[-2:] for item in dataset[0]]
         return dataloader, shapes
 

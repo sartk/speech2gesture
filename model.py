@@ -153,9 +153,7 @@ class PoseDiscriminator(nn.Module):
         return kernel + (out_size - 1) * stride - in_size
 
     def forward(self, x):
-        print(' before pad', x.shape)
         x = F.pad(x, self.padding1)
-        print(' after pad', x.shape)
         x = self.conv1(x)
         x = self.relu1(x)
         for conv_block in self.conv_blocks:
