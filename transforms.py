@@ -15,13 +15,15 @@ class Transform:
 
     def __init__(self, kwargs=None):
         self.kwargs = dict() if kwargs is None else kwargs
-        self.identity = lambda x: x
 
     def apply(self, x):
         return self.identity(x)
 
     def invert(self, y):
         return self.identity(y)
+
+    def identity(self, x):
+        return x
 
 
 class MocapDataToExpMap(Transform):
