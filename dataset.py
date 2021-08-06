@@ -46,7 +46,8 @@ class WavBVHDataset(Dataset):
             if not audio_file.is_file() or not bvh_file.is_file():
                 print(f'not found: {audio_file}')
                 continue
-            audio_end = int(self.clip_duration * (librosa.get_duration(filename=str(audio_file)) // self.clip_duration))
+            audio_end = int(self.clip_duration * ((librosa.get_duration(filename=str(audio_file)) // self.clip_duration)
+                                                  - 1))
             windows = range(0, audio_end, self.clip_duration // 2)
             print(self.save_dir / f'{name}_{len(windows) - 1}.pt')
             if (self.save_dir / f'{name}_{len(windows) - 1}.pt').is_file():
