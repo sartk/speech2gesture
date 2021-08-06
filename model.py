@@ -110,7 +110,6 @@ class AudioToPose(nn.Module):
         skip_connections.clear()
         for conv_block in self.logits:
             x = conv_block(x)
-        print('pose pred', x.shape)
         return x
 
 
@@ -126,7 +125,7 @@ class PoseDiscriminator(nn.Module):
         self.conv_blocks = nn.ModuleList()
 
         in_channels = ndf
-        input_size = cdiv(pose_dof, 2)
+        input_size = cdiv(frames, 2)
         for n in range(1, n_downsampling):
             nf_mult = min(2 ** n, 8)
             self.conv_blocks.append(
