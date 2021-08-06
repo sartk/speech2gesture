@@ -112,19 +112,20 @@ class Trainer:
         # Run Model
         pred_pose = self.generator(audio)
         print('pred', pred_pose.shape)
-        discriminator_pred = self.discriminator(pred_pose)
-        discriminator_real = self.discriminator(real_pose)
         # Update Discriminator
+        discriminator_pred = self.discriminator(pred_pose.detach())
+        discriminator_real = self.discriminator(real_pose)
         self.optim.discriminator.zero_grad()
         real_pose_loss = self.loss.mse(torch.ones_like(discriminator_real), discriminator_real)
         fake_pose_loss = self.loss.mse(torch.zeros_like(discriminator_pred), discriminator_pred)
         discriminator_loss = real_pose_loss + fake_pose_loss
         if mode == 'train':
-            discriminator_loss.backward(retain_graph=True)
+            discriminator_loss.backward()
             self.optim.discriminator.step()
         # Update Generator
         self.optim.generator.zero_grad()
         l1_loss = self.loss.l1(pred_pose, real_pose)
+        discriminator_pred = self.discriminator(pred_pose)
         adversarial_loss = self.loss.mse(torch.ones_like(discriminator_pred), discriminator_pred)
         generator_loss = l1_loss + adversarial_loss
         if mode == 'train':
