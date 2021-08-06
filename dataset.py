@@ -49,8 +49,8 @@ class WavBVHDataset(Dataset):
             audio_end = int(self.clip_duration * ((librosa.get_duration(filename=str(audio_file)) // self.clip_duration)
                                                   - 1))
             windows = range(0, audio_end, self.clip_duration // 2)
-            if (self.save_dir / f'{name}_{len(windows) - 1}.pt').is_file():
-                continue
+            #if (self.save_dir / f'{name}_{len(windows) - 1}.pt').is_file():
+            #    continue
             exp_map = self.mocap_pipeline.apply(bvh_file)
             frame = 0
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
