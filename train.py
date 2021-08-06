@@ -169,6 +169,7 @@ class Trainer:
             self.discriminator.train()
             for audio, pose in tqdm(self.data.train, desc='batch', leave=False, position=1):
                 audio, pose = self.device(audio), self.device(pose)
+                print(audio.shape)
                 results, _ = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
             self.metric.train.epoch_step()

@@ -97,7 +97,6 @@ class AudioToPose(nn.Module):
             shape = conv_block.out_shape(shape)
 
     def forward(self, x: Tensor) -> Tensor:
-        print(x.shape)
         for conv_block in self.audio_encoder:
             x = conv_block(x)
         x = self.resize(x)
