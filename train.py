@@ -192,7 +192,7 @@ class Trainer:
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'val')
                 if i < 10:
-                    bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).cpu().detach().numpy())
+                    bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
                     with open(samples_dir / f'Sample_{i}.bvh', 'w+') as f:
                         f.write(bvh)
                 self.metric.val.update(results)
