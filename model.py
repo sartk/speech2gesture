@@ -14,6 +14,7 @@ class AudioToPose(nn.Module):
         super(AudioToPose, self).__init__()
         frames, pose_dof = pose_shape
         h, w = input_shape
+        print(h, w)
         self.audio_encoder = nn.ModuleList([
             ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
             ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
