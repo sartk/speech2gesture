@@ -17,6 +17,9 @@ from model import AudioToPose, PoseDiscriminator
 import pprint
 from collections import defaultdict
 
+from transforms import Pipeline, MocapDataToExpMap, BVHtoMocapData
+
+
 class Trainer:
 
     def __init__(self, checkpoint: Dict, args: Namespace):
@@ -34,6 +37,7 @@ class Trainer:
         self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
         self.generator.float()
         self.discriminator.float()
+        self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
         self.loss = Trainer.get_losses()
         self.optim = self.get_optimizers()
         self.metric = self.get_metric_collectors()
@@ -41,6 +45,7 @@ class Trainer:
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir = self.experiment_dir / PurePath('tensorboard')
         self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
+        self.samples_dir = self.experiment_dir / PurePath('samples')
         self.tensorboard_dir.mkdir()
         self.checkpoints_dir.mkdir()
         self.log_file = self.experiment_dir / 'log.txt'
@@ -100,7 +105,8 @@ class Trainer:
         for mode in ['train', 'val', 'test']:
             dataset = WavBVHDataset(self.args.data, group=mode)
             setattr(dataloader, mode, DataLoader(dataset=dataset,
-                                                 num_workers=self.args.num_workers, batch_size=self.args.batch_size))
+                                                 num_workers=self.args.num_workers, batch_size=self.args.batch_size,
+                                                 shuffle=True))
             if shapes is None:
                 shapes = [item.shape[-2:] for item in dataset[0]]
         return dataloader, shapes
@@ -166,6 +172,8 @@ class Trainer:
         Runs the training loop.
         """
         for epoch in tqdm(range(self.args.epochs), desc='epochs', position=0):
+            samples_dir = self.samples_dir / f'Epoch_{epoch}'
+            samples_dir.mkdir(parents=True, exist_ok=True)
             if self.metric.val.patience >= self.args.patience:
                 return
             self.generator.train()
@@ -177,9 +185,13 @@ class Trainer:
             self.metric.train.epoch_step()
             self.generator.eval()
             self.discriminator.eval()
-            for audio, pose in tqdm(self.data.val, desc='batch', leave=False, position=1):
+            for i, (audio, pose) in enumerate(tqdm(self.data.val, desc='batch', leave=False, position=1)):
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'val')
+                if i < 10:
+                    bvh = self.mocap_pipeline.invert(pose[0])
+                    with open(samples_dir / f'Sample_{i}.bvh', 'w+') as f:
+                        f.write(bvh)
                 self.metric.val.update(results)
             self.metric.val.epoch_step()
             self.checkpoint.update({
