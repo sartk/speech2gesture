@@ -15,7 +15,7 @@ class WavBVHDataset(Dataset):
 
     def __getitem__(self, index) -> T_co:
         item = torch.load(self.dataset[index])
-        return item['audio'].unsqueeze(0), item['gesture']
+        return item['audio'].unsqueeze(0), item['gesture'].permute(1, 0)
 
     def __len__(self):
         return len(self.dataset)
