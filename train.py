@@ -120,7 +120,7 @@ class Trainer:
         fake_pose_loss = self.loss.mse(torch.zeros_like(discriminator_pred), discriminator_pred)
         discriminator_loss = real_pose_loss + fake_pose_loss
         if mode == 'train':
-            discriminator_loss.backward()
+            discriminator_loss.backward(retain_graph=True)
             self.optim.discriminator.step()
         # Update Generator
         self.optim.generator.zero_grad()
