@@ -109,6 +109,7 @@ class Trainer:
         """
         # Run Model
         pred_pose = self.generator(audio)
+        print('pred', pred_pose.shape)
         discriminator_pred = self.discriminator(pred_pose)
         discriminator_real = self.discriminator(real_pose)
         # Update Discriminator
