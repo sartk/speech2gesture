@@ -94,7 +94,7 @@ class Trainer:
         if self.args.dataset == 'WavBVH':
             source = WavBVHDataset
         else:
-            source = WavKeypointsDataset
+            source = None
         for mode in ['train', 'val', 'test']:
             dataset = WavBVHDataset(self.args.data, group=mode)
             setattr(dataloader, mode, DataLoader(dataset=dataset,

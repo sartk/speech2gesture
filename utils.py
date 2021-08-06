@@ -53,6 +53,7 @@ def set_up_args() -> ArgumentParser:
     parser.add_argument('--lr_generator', type=float, default=1e-4)
     parser.add_argument('--lr_discriminator', type=float, default=1e-4)
     parser.add_argument('--lambda_d', type=float, default=1)
+    parser.add_argument('--dataset', type=str, default='WavBVH', choices=['WavBVH', 'WavKeypoints'])
     parser.add_argument('--lambda_g', type=float, default=1)
     parser.add_argument('--experiments', type=PurePath, default='experiments')
     parser.add_argument('--epochs', type=int, default=500)
