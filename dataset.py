@@ -42,16 +42,16 @@ class WavBVHDataset(Dataset):
         dataset = []
         for audio_file in tqdm(list(self.audio_dir.iterdir())):
             name = audio_file.name.split('.')[0]
+            audio_end = int(self.clip_duration * (librosa.get_duration(filename=str(audio_file)) // self.clip_duration))
+            if (self.save_dir / f'{name}_0.pt').is_file() and (self.save_dir / f'{name}_{audio_end}.pt').is_file():
+                continue
             bvh_file = self.motion_dir / (name + '.bvh')
             if not audio_file.is_file() or not bvh_file.is_file():
                 print(f'not found: {audio_file}')
                 continue
             exp_map = self.mocap_pipeline.apply(bvh_file)
             frame = 0
-            audio_end = int(self.clip_duration * (librosa.get_duration(filename=str(audio_file)) // self.clip_duration))
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
-            if (self.save_dir / f'{name}_0.pt').is_file() and (self.save_dir / f'{name}_{audio_end}.pt').is_file():
-                continue
             for i, t in enumerate(range(0, audio_end, self.clip_duration // 2)):
                 dest = self.save_dir / f'{name}_{i}.pt'
                 if dest.is_file():
