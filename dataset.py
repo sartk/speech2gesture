@@ -17,6 +17,9 @@ class WavBVHDataset(Dataset):
         item = torch.load(self.dataset[index])
         return item['audio'], item['gesture']
 
+    def __len__(self):
+        return len(self.dataset)
+
     def __init__(self, dataset: Path, gesture_fps=60, clip_duration=4, group='train', transcripts=False):
         self.audio_dir: Path = dataset / 'raw_data' / group / 'Audio'
         self.motion_dir: Path = dataset / 'raw_data' / group / 'Motion'
