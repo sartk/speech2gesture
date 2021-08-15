@@ -130,7 +130,12 @@ class Trainer:
         A single batch cycle.
         """
         # Run Model
+        origin = torch.zeros_like(real_pose)
+        origin[:, :3, :] = real_pose[:, :3, :1].repeat(1, 1, real_pose.shape[-1])
+        real_pose = real_pose - origin
+
         pred_pose = self.generator(audio)
+
         # Update Discriminator
         if self.args.use_discriminator:
             discriminator_pred = self.discriminator(pred_pose.detach())
@@ -166,7 +171,7 @@ class Trainer:
                 'generator_loss': generator_loss,
                 'discriminator_loss': discriminator_loss
         }
-        return results, pred_pose
+        return results, (origin + pred_pose)
 
     def save_checkpoint(self, note='', path: Path = None, best=False) -> Path:
         """
