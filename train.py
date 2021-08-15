@@ -177,7 +177,7 @@ class Trainer:
         """
         Saves the current checkpoint (in checkpoints dir by default).
         """
-        save_file = self.experiment_dir / (note + '.pt')
+        save_file = note + '.pt'
         if path is None:
             path: Path = self.checkpoints_dir / save_file
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -220,7 +220,7 @@ class Trainer:
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
-                if i < 10:
+                if i < 3:
                     self.save_sample(samples_dir / 'train', pose, pred_pose, i)
             self.metric.train.epoch_step()
             self.generator.eval()
@@ -228,7 +228,7 @@ class Trainer:
             for i, (audio, pose) in enumerate(tqdm(self.data.val, desc='batch', leave=False, position=1)):
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'val')
-                if i < 10:
+                if i < 3:
                     self.save_sample(samples_dir / 'val', pose, pred_pose, i)
                 self.metric.val.update(results)
             self.metric.val.epoch_step()
@@ -317,6 +317,7 @@ class MetricCollector:
                 self.patience = 0
                 self.best_epoch = self.epoch
                 self.trainer.checkpoint['summary'] = summary
+                self.trainer.save_checkpoint(f'Epoch_{self.epoch}', best=False)
                 self.trainer.save_checkpoint('best', best=True)
             else:
                 self.patience += 1
