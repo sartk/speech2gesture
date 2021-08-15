@@ -62,6 +62,8 @@ def set_up_args() -> ArgumentParser:
     parser.add_argument('--precision', type=str, default='full')
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--use_discriminator', type=str2bool, default=False)
+    parser.add_argument('--overfit_test', type=str2bool, default=False)
     return parser
 
 

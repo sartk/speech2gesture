@@ -1,4 +1,3 @@
-import itertools
 from pathlib import Path
 from typing import Dict, Tuple, List, Union
 import torch
@@ -19,9 +18,9 @@ class WavBVHDataset(Dataset):
         return item['audio'].unsqueeze(0).float(), item['gesture'].permute(1, 0).float()
 
     def __len__(self):
-        return min(len(self.dataset), self.size)
+        return len(self.dataset)
 
-    def __init__(self, dataset: Path, gesture_fps=60, clip_duration=4, group='train', size='all', repeat=1, transcripts=False):
+    def __init__(self, dataset: Path, gesture_fps=60, clip_duration=4, group='train', transcripts=False):
         self.audio_dir: Path = dataset / 'raw_data' / group / 'Audio'
         self.motion_dir: Path = dataset / 'raw_data' / group / 'Motion'
         self.save_dir: Path = dataset / 'processed_data' / group
@@ -38,10 +37,6 @@ class WavBVHDataset(Dataset):
             self.dataset: List[Path] = self.build_dataset()
             with open(self.dataset_path, 'wb') as f:
                 pickle.dump(self.dataset, f)
-        self.size = (len(self.dataset) if size == 'all' else size) * repeat
-        if repeat > 1:
-            self.dataset = list(itertools.chain.from_iterable(itertools.repeat(x, repeat) for x in
-                                                              self.dataset))
 
     def build_dataset(self):
         dataset = []

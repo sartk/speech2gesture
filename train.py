@@ -9,6 +9,7 @@ from torch import nn, Tensor
 from torch.optim import Adam
 from tqdm import tqdm
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 import utils
 from dataset import WavBVHDataset
@@ -46,6 +47,7 @@ class Trainer:
         self.experiment_dir: Path = args.experiments / self.timestamp
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir = self.experiment_dir / PurePath('tensorboard')
+        self.writer = SummaryWriter(str(self.tensorboard_dir))
         self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
         self.samples_dir = self.experiment_dir / PurePath('samples')
         self.tensorboard_dir.mkdir()
@@ -60,7 +62,8 @@ class Trainer:
         Checks if self.args namespace contains all the required args
         """
         args = ['lr_generator', 'lr_discriminator', 'lambda_d', 'lambda_g', 'experiments', 'epochs', 'patience',
-                'gpu', 'precision', 'dataset', 'data', 'num_workers', 'batch_size']
+                'gpu', 'precision', 'dataset', 'data', 'num_workers', 'batch_size', 'use_discriminator',
+                'overfit_test']
         for arg in args:
             assert hasattr(self.args, arg), f'Error, missing arg: {arg}'
 
@@ -104,8 +107,15 @@ class Trainer:
             source = WavBVHDataset
         else:
             source = None
+        duration = {
+            'train': 4,
+            'val': 8,
+            'test': 12
+        }
         for mode in ['train', 'val', 'test']:
-            dataset = WavBVHDataset(self.args.data, group=mode)
+            dataset = WavBVHDataset(self.args.data, group=mode, clip_duration=duration[mode],
+                                    size=(4 if self.args.overfit_test else 'all'),
+                                    repeat=(16 if self.args.overfit_test else 1))
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size,
                                                  shuffle=True))
@@ -120,20 +130,29 @@ class Trainer:
         # Run Model
         pred_pose = self.generator(audio)
         # Update Discriminator
-        discriminator_pred = self.discriminator(pred_pose.detach())
-        discriminator_real = self.discriminator(real_pose)
-        self.optim.discriminator.zero_grad()
-        real_pose_loss = self.loss.mse(torch.ones_like(discriminator_real), discriminator_real)
-        fake_pose_loss = self.loss.mse(torch.zeros_like(discriminator_pred), discriminator_pred)
-        discriminator_loss = real_pose_loss + fake_pose_loss
-        if mode == 'train':
-            discriminator_loss.backward()
-            self.optim.discriminator.step()
+        if self.args.use_discriminator:
+            discriminator_pred = self.discriminator(pred_pose.detach())
+            discriminator_real = self.discriminator(real_pose)
+            self.optim.discriminator.zero_grad()
+            real_pose_loss = self.loss.mse(torch.ones_like(discriminator_real), discriminator_real)
+            fake_pose_loss = self.loss.mse(torch.zeros_like(discriminator_pred), discriminator_pred)
+            discriminator_loss = real_pose_loss + fake_pose_loss
+            if mode == 'train':
+                discriminator_loss.backward()
+                self.optim.discriminator.step()
+        else:
+            discriminator_loss = torch.tensor(0).cuda()
+
         # Update Generator
         self.optim.generator.zero_grad()
         l1_loss = self.loss.l1(pred_pose, real_pose)
-        discriminator_pred = self.discriminator(pred_pose)
-        adversarial_loss = self.loss.mse(torch.ones_like(discriminator_pred), discriminator_pred)
+
+        if self.args.use_discriminator:
+            discriminator_pred = self.discriminator(pred_pose)
+            adversarial_loss = self.loss.mse(torch.ones_like(discriminator_pred), discriminator_pred)
+        else:
+            adversarial_loss = torch.tensor(0).cuda()
+
         generator_loss = l1_loss + adversarial_loss
         if mode == 'train':
             generator_loss.backward()
@@ -170,6 +189,14 @@ class Trainer:
             x = x.half()
         return x
 
+    def save_sample(self, directory, pose, pred_pose):
+        bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
+        with open(directory / 'pred' / f'Pose_{i}.bvh', 'w+') as f:
+            f.write(bvh)
+        bvh_real = self.mocap_pipeline.invert(pose[0].permute(1, 0).numpy())
+        with open(directory / 'real' / f'Pose_{i}_Real.bvh', 'w+') as f:
+            f.write(bvh_real)
+
     def run(self):
         """
         Runs the training loop.
@@ -181,10 +208,12 @@ class Trainer:
                 return
             self.generator.train()
             self.discriminator.train()
-            for audio, pose in tqdm(self.data.train, desc='batch', leave=False, position=1):
+            for i, (audio, pose) in enumerate(tqdm(self.data.train, desc='batch', leave=False, position=1)):
                 audio, pose = self.device(audio), self.device(pose)
-                results, _ = self.loop(audio, pose, 'train')
+                results, pred_pose = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
+                if i < 10:
+                    self.save_sample(samples_dir / 'train', pose, pred_pose)
             self.metric.train.epoch_step()
             self.generator.eval()
             self.discriminator.eval()
@@ -192,12 +221,7 @@ class Trainer:
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'val')
                 if i < 10:
-                    bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
-                    with open(samples_dir / f'Sample_{i}.bvh', 'w+') as f:
-                        f.write(bvh)
-                    bvh_real = self.mocap_pipeline.invert(pose[0].permute(1, 0).numpy())
-                    with open(samples_dir / f'Sample_{i}_Real.bvh', 'w+') as f:
-                        f.write(bvh_real)
+                    self.save_sample(samples_dir / 'val', pose, pred_pose)
                 self.metric.val.update(results)
             self.metric.val.epoch_step()
             self.checkpoint.update({
@@ -210,7 +234,6 @@ class Trainer:
                     'discriminator': self.optim.discriminator.state_dict()
                 }
             })
-
 
 
 Number = Union[float, int]
@@ -247,9 +270,7 @@ class MetricCollector:
         Updates the current epoch with new values for the metrics.
         """
         for name, value in new_values.items():
-            if self.trainer:
-                pass
-                #self.trainer.writer.add_scalar(f'{self.phase}Batch/{name}', value, global_step=self.global_step)
+            self.trainer.writer.add_scalar(f'{self.phase}Batch/{name}', value, global_step=self.global_step)
             if isinstance(value, Tensor):
                 value = value.item()
             self.r1[self.epoch][name] += value * n
@@ -280,8 +301,7 @@ class MetricCollector:
         summary = self.summary()
         for info in ['mean', 'sd']:
             for name, value in summary[info].items():
-                pass
-                #self.trainer.writer.add_scalar(f'{self.phase}Epoch/{name}_{info}', value, global_step=self.epoch)
+                self.trainer.writer.add_scalar(f'{self.phase}Epoch/{name}_{info}', value, global_step=self.epoch)
         if 'val' in self.phase.lower():
             metric = self.patience_monitor(summary)
             if metric < self.lowest_patience_metric:
@@ -302,3 +322,4 @@ class MetricCollector:
     def reset_patience(self):
         self.lowest_patience_metric = float('inf')
         self.patience = 0
+
