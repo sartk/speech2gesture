@@ -116,7 +116,7 @@ class Trainer:
         }
         for mode in ['train', 'val', 'test']:
             dataset = WavBVHDataset(self.args.data, group=mode, clip_duration=duration[mode],
-                                    size=(4 if self.args.overfit_test else 'all'),
+                                    size=(1 if self.args.overfit_test else 'all'),
                                     repeat=(16 if self.args.overfit_test else 1))
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size,
