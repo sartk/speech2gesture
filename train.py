@@ -47,13 +47,13 @@ class Trainer:
         self.experiment_dir: Path = args.experiments / self.timestamp
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir = self.experiment_dir / PurePath('tensorboard')
+        self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
+        self.samples_dir = self.experiment_dir / PurePath('samples')
+        self.tensorboard_dir.mkdir(exist_ok=True, parents=True)
+        self.checkpoints_dir.mkdir(exist_ok=True, parents=True)
         print('Run the following command to view Tensorboard:')
         print('tensorboard --logdir', self.tensorboard_dir)
         self.writer = SummaryWriter(str(self.tensorboard_dir))
-        self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
-        self.samples_dir = self.experiment_dir / PurePath('samples')
-        self.tensorboard_dir.mkdir()
-        self.checkpoints_dir.mkdir()
         self.log_file = self.experiment_dir / 'log.txt'
         self.log = utils.logger(self.log_file)
         self.best_checkpoint: Union[Path, None] = None
