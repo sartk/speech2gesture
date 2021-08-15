@@ -47,6 +47,8 @@ class Trainer:
         self.experiment_dir: Path = args.experiments / self.timestamp
         self.experiment_dir.mkdir(parents=True, exist_ok=True)
         self.tensorboard_dir = self.experiment_dir / PurePath('tensorboard')
+        print('Run the following command to view Tensorboard:')
+        print('tensorboard --logdir', self.tensorboard_dir)
         self.writer = SummaryWriter(str(self.tensorboard_dir))
         self.checkpoints_dir = self.experiment_dir / PurePath('checkpoints')
         self.samples_dir = self.experiment_dir / PurePath('samples')
