@@ -192,6 +192,7 @@ class Trainer:
         return x
 
     def save_sample(self, directory, pose, pred_pose, number):
+        directory.mkdir(parents=True, exist_ok=True)
         bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
         with open(directory / 'pred' / f'Pose_{number}.bvh', 'w+') as f:
             f.write(bvh)
