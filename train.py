@@ -14,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 import utils
 from dataset import WavBVHDataset
 from model import AudioToPose, PoseDiscriminator
+from liwen_models import get_model
 
 import pprint
 from collections import defaultdict
@@ -34,8 +35,8 @@ class Trainer:
         self.timestamp = time.strftime("%Y%m%d-%H%M%S")
         self.check_required_args()
         self.data, shapes = self.get_data()
-        self.generator = AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
-        self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
+        self.generator = get_model('gru_unet_decoder') #AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
+        self.discriminator = get_model('patchgan') #PoseDiscriminator(pose_shape=shapes[1])
         self.generator.float()
         self.discriminator.float()
         self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
