@@ -36,7 +36,7 @@ class Trainer:
         self.check_required_args()
         self.data, shapes = self.get_data()
         args.device = torch.device("cuda:0")
-        self.generator = get_model('unet_decoder')(shapes[0][0], 256, shapes[1][0], args.batch_size, args.device) #AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
+        self.generator = get_model('unet_decoder')(240, 256, shapes[1][0], args.batch_size, args.device) #AudioToPose(input_shape=shapes[0], pose_shape=shapes[1])
         self.discriminator = get_model('patchgan')(shapes[1][0]) #PoseDiscriminator(pose_shape=shapes[1])
         self.generator.float()
         self.discriminator.float()
