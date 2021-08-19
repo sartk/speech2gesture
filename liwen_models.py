@@ -180,7 +180,7 @@ class Unet_Decoder(nn.Module):
         self.decoder = Decoder(out_channels, out_channels, output_dimension)
 
     def forward(self, x):
-        x = self.unet(x)
+        x = self.unet(x.squeeze(1))
         x = self.decoder(x)
         return x
 
