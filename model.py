@@ -10,31 +10,17 @@ from torch import Tensor
 
 class AudioToPose(nn.Module):
 
-    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int]):
+    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2):
         super(AudioToPose, self).__init__()
         pose_dof, frames = pose_shape
         h, w = input_shape
-        self.audio_encoder = nn.ModuleList([
-            ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
-            ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
-                           output_shape=(cdiv(h, 2), cdiv(w, 2))),
-            ConvNormRelu2d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                           input_shape=(cdiv(h, 2), cdiv(w, 2))),
-            ConvNormRelu2d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                           input_shape=(cdiv(h, 2), cdiv(w, 2)),
-                           output_shape=(cdiv(h, 4), cdiv(w, 4))),
-            ConvNormRelu2d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                           input_shape=(cdiv(h, 4), cdiv(w, 4))),
-            ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                           input_shape=(cdiv(h, 4), cdiv(w, 4)),
-                           output_shape=(cdiv(h, 8), cdiv(w, 8))),
-            ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                           input_shape=(cdiv(h, 8), cdiv(w, 8))),
-            ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
-                           padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
-        ])
-        self.resize = lambda t: torch.squeeze(
-            F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
+        self.encoder_dim = encoder_dim
+        self.audio_encoder = self.get_audio_encoder(d=encoder_dim)
+        if encoder_dim == 2:
+            self.resize = lambda t: torch.squeeze(
+                F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
+        elif encoder_dim == 1:
+            self.resize = lambda t: F.interpolate(t, size=(frames,), mode='bilinear', align_corners=False)
         self.unet_encoder_labels = [5, 6, 7, 8, 9, 10]
         self.unet_encoder = nn.ModuleList([
             nn.Sequential(
@@ -84,6 +70,50 @@ class AudioToPose(nn.Module):
             nn.Conv1d(in_channels=256, out_channels=pose_dof, kernel_size=(1,), stride=(1,))
         ])
 
+        def get_audio_encoder(d=2):
+            if d == 2:
+                return nn.ModuleList([
+                    ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
+                    ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
+                                   output_shape=(cdiv(h, 2), cdiv(w, 2))),
+                    ConvNormRelu2d(in_channels=64, out_channels=128, leaky=True, downsample=False,
+                                   input_shape=(cdiv(h, 2), cdiv(w, 2))),
+                    ConvNormRelu2d(in_channels=128, out_channels=128, leaky=True, downsample=True,
+                                   input_shape=(cdiv(h, 2), cdiv(w, 2)),
+                                   output_shape=(cdiv(h, 4), cdiv(w, 4))),
+                    ConvNormRelu2d(in_channels=128, out_channels=256, leaky=True, downsample=False,
+                                   input_shape=(cdiv(h, 4), cdiv(w, 4))),
+                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                   input_shape=(cdiv(h, 4), cdiv(w, 4)),
+                                   output_shape=(cdiv(h, 8), cdiv(w, 8))),
+                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                                   input_shape=(cdiv(h, 8), cdiv(w, 8))),
+                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
+                                   padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
+                ])
+            elif d == 1:
+                return nn.ModuleList([
+                    ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
+                    ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(w,),
+                                   output_shape=(cdiv(w, 2),)),
+                    ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
+                                   input_shape=(cdiv(w, 2)),),
+                    ConvNormRelu1d(in_channels=128, out_channels=128, leaky=True, downsample=True,
+                                   input_shape=(cdiv(w, 2),),
+                                   output_shape=(cdiv(w, 4)),),
+                    ConvNormRelu1d(in_channels=128, out_channels=256, leaky=True, downsample=False,
+                                   input_shape=(cdiv(w, 4),)),
+                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                                   input_shape=(cdiv(w, 4),),
+                                   output_shape=(cdiv(w, 8),)),
+                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                                   input_shape=(cdiv(w, 8),)),
+                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8),
+                                   stride=1,
+                                   padding=0, input_shape=(cdiv(w, 8),))
+                ])
+
+
         def weight_init(m):
             if m == self.logits[-1]:
                 nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
@@ -97,6 +127,8 @@ class AudioToPose(nn.Module):
             shape = conv_block.out_shape(shape)
 
     def forward(self, x: Tensor) -> Tensor:
+        if self.encoder_dim == 2:
+            x = x.unsqueeze(1)
         for conv_block in self.audio_encoder:
             x = conv_block(x)
         x = self.resize(x)
