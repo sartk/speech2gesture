@@ -94,24 +94,24 @@ class AudioToPose(nn.Module):
             ])
         elif d == 1:
             return nn.ModuleList([
-                ConvNormRelu1d(in_channels=81, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
-                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(w,),
-                               output_shape=(cdiv(w, 2),)),
+                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(h,)),
+                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h,),
+                               output_shape=(cdiv(h, 2),)),
                 ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                               input_shape=(cdiv(w, 2),)),
+                               input_shape=(cdiv(h, 2),)),
                 ConvNormRelu1d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                               input_shape=(cdiv(w, 2),),
-                               output_shape=(cdiv(w, 4),)),
+                               input_shape=(cdiv(h, 2),),
+                               output_shape=(cdiv(h, 4),)),
                 ConvNormRelu1d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(w, 4),)),
+                               input_shape=(cdiv(h, 4),)),
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                               input_shape=(cdiv(w, 4),),
-                               output_shape=(cdiv(w, 8),)),
+                               input_shape=(cdiv(h, 4),),
+                               output_shape=(cdiv(h, 8),)),
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(w, 8),)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(8,),
+                               input_shape=(cdiv(h, 8),)),
+                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3,),
                                stride=1,
-                               padding=0, input_shape=(cdiv(w, 8),))
+                               padding=0, input_shape=(cdiv(h, 8),))
             ])
 
 
@@ -130,6 +130,8 @@ class AudioToPose(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         if self.encoder_dim == 2:
             x = x.unsqueeze(1)
+        elif self.encoder_dim == 1:
+            x = x.permute(0, 2, 1)
         for conv_block in self.audio_encoder:
             x = conv_block(x)
         x = self.resize(x)
