@@ -93,7 +93,7 @@ class AudioToPose(nn.Module):
             ])
         elif d == 1:
             return nn.ModuleList([
-                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
+                ConvNormRelu1d(in_channels=81, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
                 ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(w,),
                                output_shape=(cdiv(w, 2),)),
                 ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
