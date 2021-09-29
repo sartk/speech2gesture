@@ -108,7 +108,7 @@ class AudioToPose(nn.Module):
                                output_shape=(cdiv(w, 8),)),
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(w, 8),)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8),
+                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(8,),
                                stride=1,
                                padding=0, input_shape=(cdiv(w, 8),))
             ])
