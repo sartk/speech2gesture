@@ -70,48 +70,48 @@ class AudioToPose(nn.Module):
             nn.Conv1d(in_channels=256, out_channels=pose_dof, kernel_size=(1,), stride=(1,))
         ])
 
-        def get_audio_encoder(d=2):
-            if d == 2:
-                return nn.ModuleList([
-                    ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
-                    ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
-                                   output_shape=(cdiv(h, 2), cdiv(w, 2))),
-                    ConvNormRelu2d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                                   input_shape=(cdiv(h, 2), cdiv(w, 2))),
-                    ConvNormRelu2d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                                   input_shape=(cdiv(h, 2), cdiv(w, 2)),
-                                   output_shape=(cdiv(h, 4), cdiv(w, 4))),
-                    ConvNormRelu2d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                                   input_shape=(cdiv(h, 4), cdiv(w, 4))),
-                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                   input_shape=(cdiv(h, 4), cdiv(w, 4)),
-                                   output_shape=(cdiv(h, 8), cdiv(w, 8))),
-                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                                   input_shape=(cdiv(h, 8), cdiv(w, 8))),
-                    ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
-                                   padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
-                ])
-            elif d == 1:
-                return nn.ModuleList([
-                    ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
-                    ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(w,),
-                                   output_shape=(cdiv(w, 2),)),
-                    ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                                   input_shape=(cdiv(w, 2)),),
-                    ConvNormRelu1d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                                   input_shape=(cdiv(w, 2),),
-                                   output_shape=(cdiv(w, 4)),),
-                    ConvNormRelu1d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                                   input_shape=(cdiv(w, 4),)),
-                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                                   input_shape=(cdiv(w, 4),),
-                                   output_shape=(cdiv(w, 8),)),
-                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                                   input_shape=(cdiv(w, 8),)),
-                    ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8),
-                                   stride=1,
-                                   padding=0, input_shape=(cdiv(w, 8),))
-                ])
+    def get_audio_encoder(self, d=2):
+        if d == 2:
+            return nn.ModuleList([
+                ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
+                ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
+                               output_shape=(cdiv(h, 2), cdiv(w, 2))),
+                ConvNormRelu2d(in_channels=64, out_channels=128, leaky=True, downsample=False,
+                               input_shape=(cdiv(h, 2), cdiv(w, 2))),
+                ConvNormRelu2d(in_channels=128, out_channels=128, leaky=True, downsample=True,
+                               input_shape=(cdiv(h, 2), cdiv(w, 2)),
+                               output_shape=(cdiv(h, 4), cdiv(w, 4))),
+                ConvNormRelu2d(in_channels=128, out_channels=256, leaky=True, downsample=False,
+                               input_shape=(cdiv(h, 4), cdiv(w, 4))),
+                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                               input_shape=(cdiv(h, 4), cdiv(w, 4)),
+                               output_shape=(cdiv(h, 8), cdiv(w, 8))),
+                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                               input_shape=(cdiv(h, 8), cdiv(w, 8))),
+                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
+                               padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
+            ])
+        elif d == 1:
+            return nn.ModuleList([
+                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(w,)),
+                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(w,),
+                               output_shape=(cdiv(w, 2),)),
+                ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
+                               input_shape=(cdiv(w, 2)),),
+                ConvNormRelu1d(in_channels=128, out_channels=128, leaky=True, downsample=True,
+                               input_shape=(cdiv(w, 2),),
+                               output_shape=(cdiv(w, 4)),),
+                ConvNormRelu1d(in_channels=128, out_channels=256, leaky=True, downsample=False,
+                               input_shape=(cdiv(w, 4),)),
+                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+                               input_shape=(cdiv(w, 4),),
+                               output_shape=(cdiv(w, 8),)),
+                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                               input_shape=(cdiv(w, 8),)),
+                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8),
+                               stride=1,
+                               padding=0, input_shape=(cdiv(w, 8),))
+            ])
 
 
         def weight_init(m):
