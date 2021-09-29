@@ -4,7 +4,6 @@ from pathlib import Path
 import librosa
 import numpy as np
 import scipy.signal
-from numpy.typing import ArrayLike
 
 from pymo.data import MocapData
 from pymo.parsers import BVHParser
@@ -31,7 +30,7 @@ class MocapDataToExpMap(Transform):
     def __init__(self, kwargs=None):
         super().__init__(kwargs)
 
-    def apply(self, mocap_data: MocapData, use_deg: bool = True) -> ArrayLike:
+    def apply(self, mocap_data: MocapData, use_deg: bool = True):
         df = mocap_data.values
         frames = np.zeros(df.shape)
         for frame_number, (time_delta, channels) in enumerate(df.iterrows()):
@@ -50,7 +49,7 @@ class MocapDataToExpMap(Transform):
                     channel_num += 1
         return frames
 
-    def invert(self, exp_map, back_to_deg=True) -> ArrayLike:
+    def invert(self, exp_map, back_to_deg=True):
         frames = np.zeros(exp_map.shape)
         assert exp_map.shape[1] == 174
         for i in range(exp_map.shape[0]):
