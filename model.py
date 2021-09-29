@@ -15,7 +15,7 @@ class AudioToPose(nn.Module):
         pose_dof, frames = pose_shape
         h, w = input_shape
         self.encoder_dim = encoder_dim
-        self.audio_encoder = self.get_audio_encoder(d=encoder_dim)
+        self.audio_encoder = self.get_audio_encoder(encoder_dim, h, w)
         if encoder_dim == 2:
             self.resize = lambda t: torch.squeeze(
                 F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
@@ -70,7 +70,7 @@ class AudioToPose(nn.Module):
             nn.Conv1d(in_channels=256, out_channels=pose_dof, kernel_size=(1,), stride=(1,))
         ])
 
-    def get_audio_encoder(self, d=2):
+    def get_audio_encoder(self, d, h, w):
         if d == 2:
             return nn.ModuleList([
                 ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
