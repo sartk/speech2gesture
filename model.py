@@ -11,18 +11,39 @@ import interp_methods
 
 class AudioToPose(nn.Module):
 
-    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2):
+    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2,
+                 audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1]):
         super(AudioToPose, self).__init__()
+
         pose_dof, frames = pose_shape
-        h, w = input_shape
+        h, w = input_shape # h is time, w is features
+
         self.encoder_dim = encoder_dim
-        self.audio_encoder = self.get_audio_encoder(encoder_dim, h, w)
+        factor, self.audio_encoder_down_factors = 1, [1]
+        for mult in audio_encoder_mults:
+            factor *= mult
+            self.audio_encoder_down_factors.append(factor)
+
+        if d == 1:
+            sizes = [(cdiv(h, factor),) for factor in self.audio_encoder_down_factors]
+            channels = [64 * factor for factor in self.audio_encoder_down_factors]
+        else:
+            sizes = [(cdiv(h, factor), cdiv(w, factor)) for factor in self.audio_encoder_down_factors]
+            channels = [1] + [64 * factor for factor in self.audio_encoder_down_factors[1:]]
+
+        self.audio_encoder = nn.ModuleList(
+            [ConvNormRelu1d(in_channels=channels[i], out_channels=channels[i + 1], leaky=True,
+                            downsample=(audio_encoder_mults[i] > 1), input_shape=sizes[i],
+                            output_shape=sizes[i + 1]) for i in range(len(sizes) - 1)])
+
         if encoder_dim == 2:
-            self.resize = lambda t: torch.squeeze(
-                F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
+            self.resize = lambda t: resize(t, out_shape=(frames, 1), interp_method=interp_methods.linear).squeeze(-1)
         elif encoder_dim == 1:
             self.resize = lambda t: resize(t, out_shape=(frames,), interp_method=interp_methods.linear)
+
+
         self.unet_encoder_labels = [5, 6, 7, 8, 9, 10]
+
         self.unet_encoder = nn.ModuleList([
             nn.Sequential(
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
@@ -71,56 +92,14 @@ class AudioToPose(nn.Module):
             nn.Conv1d(in_channels=256, out_channels=pose_dof, kernel_size=(1,), stride=(1,))
         ])
 
-    def get_audio_encoder(self, d, h, w):
-        if d == 2:
-            return nn.ModuleList([
-                ConvNormRelu2d(in_channels=1, out_channels=64, leaky=True, downsample=False, input_shape=(h, w)),
-                ConvNormRelu2d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h, w),
-                               output_shape=(cdiv(h, 2), cdiv(w, 2))),
-                ConvNormRelu2d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 2), cdiv(w, 2))),
-                ConvNormRelu2d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                               input_shape=(cdiv(h, 2), cdiv(w, 2)),
-                               output_shape=(cdiv(h, 4), cdiv(w, 4))),
-                ConvNormRelu2d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 4), cdiv(w, 4))),
-                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                               input_shape=(cdiv(h, 4), cdiv(w, 4)),
-                               output_shape=(cdiv(h, 8), cdiv(w, 8))),
-                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 8), cdiv(w, 8))),
-                ConvNormRelu2d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3, 8), stride=1,
-                               padding=0, input_shape=(cdiv(h, 8), cdiv(w, 8)))
-            ])
-        elif d == 1:
-            return nn.ModuleList([
-                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=False, input_shape=(h,)),
-                ConvNormRelu1d(in_channels=64, out_channels=64, leaky=True, downsample=True, input_shape=(h,),
-                               output_shape=(cdiv(h, 2),)),
-                ConvNormRelu1d(in_channels=64, out_channels=128, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 2),)),
-                ConvNormRelu1d(in_channels=128, out_channels=128, leaky=True, downsample=True,
-                               input_shape=(cdiv(h, 2),),
-                               output_shape=(cdiv(h, 4),)),
-                ConvNormRelu1d(in_channels=128, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 4),)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
-                               input_shape=(cdiv(h, 4),),
-                               output_shape=(cdiv(h, 8),)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(cdiv(h, 8),)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False, kernel=(3,),
-                               stride=1,
-                               padding=0, input_shape=(cdiv(h, 8),))
-            ])
-
-
         def weight_init(m):
             if m == self.logits[-1]:
                 nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
                 nn.init.zeros_(m.bias)
 
         self.apply(weight_init)
+
+
 
     def set_input_shape(self, shape: Tuple[int, int]):
         for conv_block in self.audio_encoder:
@@ -131,7 +110,7 @@ class AudioToPose(nn.Module):
         if self.encoder_dim == 2:
             x = x.unsqueeze(1)
         elif self.encoder_dim == 1:
-            x = x.permute(0, 2, 1)
+            x = x.permute(0, 2, 1) # bring features to front and time to end
         for conv_block in self.audio_encoder:
             x = conv_block(x)
         x = self.resize(x)
@@ -226,6 +205,12 @@ class ConvNormRelu(nn.Module):
     @staticmethod
     def _compute_padding(in_size, kernel, stride, out_size):
         return kernel + (out_size - 1) * stride - in_size
+
+    def reset_shape(self, input_shape, output_shape):
+        self.output_shape = output_shape
+        self.input_shape = input_shape
+        padding = self.compute_padding(input_shape)
+        self._set_multidimensional_attr('padding', padding, 2 * dim)
 
     @staticmethod
     def _out_size(in_size, stride):
