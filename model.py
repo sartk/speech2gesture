@@ -12,24 +12,24 @@ import interp_methods
 class AudioToPose(nn.Module):
 
     def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2,
-                 audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1]):
+                 audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1], channel_mults = [1, 2, 1, 2, 1, 1, 1, 1]):
         super(AudioToPose, self).__init__()
 
         pose_dof, frames = pose_shape
         h, w = input_shape # h is time, w is features
 
         self.encoder_dim = encoder_dim
-        factor, self.audio_encoder_down_factors = 1, [1]
-        for mult in audio_encoder_mults:
-            factor *= mult
-            self.audio_encoder_down_factors.append(factor)
+        self.audio_encoder_down_factors, self.channel_factors = [1], [64]
+        for m, n in zip(audio_encoder_mults, channel_mults):
+            self.audio_encoder_down_factors.append(m * self.audio_encoder_down_factors[-1])
+            self.channel_factors.append(n * self.channel_factors[-1])
 
         if encoder_dim == 1:
             sizes = [(cdiv(h, factor),) for factor in self.audio_encoder_down_factors]
-            channels = [64 * factor for factor in [1] + self.audio_encoder_down_factors[:-1]]
+            channels = [64 * factor for factor in [1] + self.channel_factors[:-1]]
         else:
             sizes = [(cdiv(h, factor), cdiv(w, factor)) for factor in self.audio_encoder_down_factors]
-            channels = [1] + [64 * factor for factor in self.audio_encoder_down_factors[1:]]
+            channels = [64 * factor for factor in self.channel_factors[1:]]
 
         self.audio_encoder = nn.ModuleList(
             [ConvNormRelu1d(in_channels=channels[i], out_channels=channels[i + 1], leaky=True,
