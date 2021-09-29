@@ -24,7 +24,7 @@ class AudioToPose(nn.Module):
             factor *= mult
             self.audio_encoder_down_factors.append(factor)
 
-        if d == 1:
+        if encoder_dim == 1:
             sizes = [(cdiv(h, factor),) for factor in self.audio_encoder_down_factors]
             channels = [64 * factor for factor in self.audio_encoder_down_factors]
         else:
