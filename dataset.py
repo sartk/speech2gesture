@@ -46,7 +46,10 @@ class WavBVHDataset(Dataset):
     def build_dataset(self):
         dataset = []
         for audio_file in tqdm(list(self.audio_dir.iterdir())):
-            name = audio_file.name.split('.')[0]
+            splits = audio_file.name.split('.')
+            name, ext = '.'.join(splits[:-1]), splits[-1]
+            if ext != 'wav':
+                continue
             bvh_file = self.motion_dir / (name + '.bvh')
             if not audio_file.is_file() or not bvh_file.is_file():
                 print(f'not found: {audio_file}')
