@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from resize_right import resize
-
+import interp_methods
 
 class AudioToPose(nn.Module):
 
@@ -21,7 +21,7 @@ class AudioToPose(nn.Module):
             self.resize = lambda t: torch.squeeze(
                 F.interpolate(t, size=(frames, 1), mode='bilinear', align_corners=False), dim=-1)
         elif encoder_dim == 1:
-            self.resize = lambda t: resize(t, out_shape=(frames,), mode='linear', align_corners=False)
+            self.resize = lambda t: resize(t, out_shape=(frames,), interp_method=interp_methods.linear)
         self.unet_encoder_labels = [5, 6, 7, 8, 9, 10]
         self.unet_encoder = nn.ModuleList([
             nn.Sequential(
