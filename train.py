@@ -39,7 +39,9 @@ class Trainer:
         self.train_generator = AudioToPose(input_shape=shapes.train[0], pose_shape=shapes.train[1], encoder_dim=args.encoder_dim)
         self.val_generator = AudioToPose(input_shape=shapes.val[0], pose_shape=shapes.val[1], encoder_dim=args.encoder_dim)
         self.generator = self.train_generator
-        self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
+        self.train_discriminator = PoseDiscriminator(pose_shape=shapes.train[1])
+        self.val_discriminator = PoseDiscriminator(pose_shape=shapes.val[1])
+        self.discriminator = self.train_discriminator
         self.generator.float()
         self.discriminator.float()
         self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
@@ -228,6 +230,8 @@ class Trainer:
                     self.save_sample(samples_dir / 'train', pose, pred_pose, i)
             self.metric.train.epoch_step()
             self.val_generator.load_state_dict(self.train_generator.state_dict())
+            self.val_discriminator.load_state_dict(self.val_discriminator.state_dict())
+            self.val_discriminator
             self.generator = self.val_generator
             self.generator.eval()
             self.discriminator.eval()
@@ -240,8 +244,8 @@ class Trainer:
             self.metric.val.epoch_step()
             self.checkpoint.update({
                 'model_state_dict': {
-                    'generator': self.generator.state_dict(),
-                    'discriminator': self.discriminator.state_dict()
+                    'generator': self.train_generator.state_dict(),
+                    'discriminator': self.train_discriminator.state_dict()
                 },
                 'optimizer_state_dict': {
                     'generator': self.optim.generator.state_dict(),
