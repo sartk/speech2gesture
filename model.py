@@ -32,7 +32,7 @@ class AudioToPose(nn.Module):
         channels = [factor for factor in self.channel_factors]
 
         self.audio_encoder = nn.ModuleList(
-            [ConvNormRelu1d(in_channels=channels[i], out_channels=channels[i + 1], leaky=True,
+            [[None, ConvNormRelu1d, ConvNormRelu2d][encoder_dim](in_channels=channels[i], out_channels=channels[i + 1], leaky=True,
                             downsample=(audio_encoder_mults[i] > 1), input_shape=sizes[i],
                             output_shape=sizes[i + 1]) for i in range(len(sizes) - 1)])
 
