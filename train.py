@@ -228,7 +228,7 @@ class Trainer:
                 if i < 3:
                     self.save_sample(samples_dir / 'train', pose, pred_pose, i)
             self.metric.train.epoch_step()
-            self.val_generator.load_state_dict(self.generator.state_dict())
+            self.val_generator.load_state_dict(self.train_generator.state_dict())
             self.generator = self.val_generator
             self.generator.eval()
             self.discriminator.eval()
