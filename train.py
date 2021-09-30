@@ -125,8 +125,7 @@ class Trainer:
             setattr(dataloader, mode, DataLoader(dataset=dataset,
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size,
                                                  shuffle=True))
-            if shapes is None:
-                setattr(shapes, mode, [item.shape[-2:] for item in dataset[0]])
+            setattr(shapes, mode, [item.shape[-2:] for item in dataset[0]])
         return dataloader, shapes
 
     def loop(self, audio, real_pose, mode='train'):
