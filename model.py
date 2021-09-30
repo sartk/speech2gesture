@@ -11,13 +11,14 @@ import interp_methods
 
 class AudioToPose(nn.Module):
 
-    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2,
-                 audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1], channel_mults = [1, 2, 1, 2, 1, 1, 1, 1]):
+    def __init__(self, pose_shape: Tuple[int, int], input_shape: Tuple[int, int], encoder_dim=2):
         super(AudioToPose, self).__init__()
 
         pose_dof, frames = pose_shape
         h, w = input_shape # h is time, w is features
 
+        audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1]
+        channel_mults = [1 if encoder_dim == 1 else 64, 2, 1, 2, 1, 1, 1, 1]
         self.encoder_dim = encoder_dim
         self.audio_encoder_down_factors, self.channel_factors = [1], [None, [64], [1]][encoder_dim]
         for m, n in zip(audio_encoder_mults, channel_mults):
