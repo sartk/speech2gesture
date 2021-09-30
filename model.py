@@ -19,7 +19,7 @@ class AudioToPose(nn.Module):
         h, w = input_shape # h is time, w is features
 
         self.encoder_dim = encoder_dim
-        self.audio_encoder_down_factors, self.channel_factors = [1], [64]
+        self.audio_encoder_down_factors, self.channel_factors = [1], [None, [64], [1]][encoder_dim]
         for m, n in zip(audio_encoder_mults, channel_mults):
             self.audio_encoder_down_factors.append(m * self.audio_encoder_down_factors[-1])
             self.channel_factors.append(n * self.channel_factors[-1])
