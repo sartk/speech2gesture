@@ -36,7 +36,9 @@ class Trainer:
         self.check_required_args()
         self.data, shapes = self.get_data()
         args.device = torch.device("cuda:0")
-        self.generator = AudioToPose(input_shape=shapes[0], pose_shape=shapes[1], encoder_dim=args.encoder_dim)
+        self.train_generator = AudioToPose(input_shape=shapes.train[0], pose_shape=shapes.train[1], encoder_dim=args.encoder_dim)
+        self.val_generator = AudioToPose(input_shape=shapes.val[0], pose_shape=shapes.val[1], encoder_dim=args.encoder_dim)
+        self.generator = self.train_generator
         self.discriminator = PoseDiscriminator(pose_shape=shapes[1])
         self.generator.float()
         self.discriminator.float()
@@ -106,7 +108,7 @@ class Trainer:
         Returns  the data.
         """
         dataloader = Namespace()
-        shapes = None
+        shapes = Namespace()
         if self.args.dataset == 'WavBVH':
             source = WavBVHDataset
         else:
@@ -124,7 +126,7 @@ class Trainer:
                                                  num_workers=self.args.num_workers, batch_size=self.args.batch_size,
                                                  shuffle=True))
             if shapes is None:
-                shapes = [item.shape[-2:] for item in dataset[0]]
+                setattr(shapes, mode, [item.shape[-2:] for item in dataset[0]])
         return dataloader, shapes
 
     def loop(self, audio, real_pose, mode='train'):
@@ -216,6 +218,7 @@ class Trainer:
             samples_dir.mkdir(parents=True, exist_ok=True)
             if self.metric.val.patience >= self.args.patience:
                 return
+            self.generator = self.train_generator
             self.generator.train()
             self.discriminator.train()
             for i, (audio, pose) in enumerate(tqdm(self.data.train, desc='batch', leave=False, position=1)):
@@ -225,6 +228,8 @@ class Trainer:
                 if i < 3:
                     self.save_sample(samples_dir / 'train', pose, pred_pose, i)
             self.metric.train.epoch_step()
+            self.val_generator.load_state_dict(self.generator.state_dict())
+            self.generator = self.val_generator
             self.generator.eval()
             self.discriminator.eval()
             for i, (audio, pose) in enumerate(tqdm(self.data.val, desc='batch', leave=False, position=1)):

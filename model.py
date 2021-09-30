@@ -26,10 +26,10 @@ class AudioToPose(nn.Module):
 
         if encoder_dim == 1:
             sizes = [(cdiv(h, factor),) for factor in self.audio_encoder_down_factors]
-            channels = [factor for factor in self.channel_factors]
         else:
             sizes = [(cdiv(h, factor), cdiv(w, factor)) for factor in self.audio_encoder_down_factors]
-            channels = [factor for factor in self.channel_factors]
+
+        channels = [factor for factor in self.channel_factors]
 
         self.audio_encoder = nn.ModuleList(
             [ConvNormRelu1d(in_channels=channels[i], out_channels=channels[i + 1], leaky=True,
