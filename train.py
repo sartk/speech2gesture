@@ -117,8 +117,8 @@ class Trainer:
             source = None
         duration = {
             'train': 4,
-            'val': 8,
-            'test': 12
+            'val': 24,
+            'test': 24
         }
         for mode in ['train', 'val', 'test']:
             dataset = WavBVHDataset(self.args.data, group=mode, clip_duration=duration[mode],
@@ -222,7 +222,7 @@ class Trainer:
             self.generator = self.train_generator
             self.generator.train()
             self.discriminator.train()
-            for i, (audio, pose) in enumerate(tqdm(self.data.train, desc='batch', leave=False, position=1)):
+            for i, (pose_number, audio, pose) in enumerate(tqdm(self.data.train, desc='batch', leave=False, position=1)):
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'train')
                 self.metric.train.update(results)
@@ -231,11 +231,11 @@ class Trainer:
             self.metric.train.epoch_step()
             self.val_generator.load_state_dict(self.train_generator.state_dict())
             self.val_discriminator.load_state_dict(self.val_discriminator.state_dict())
-            self.val_discriminator
+            self.discriminator = self.val_discriminator
             self.generator = self.val_generator
             self.generator.eval()
             self.discriminator.eval()
-            for i, (audio, pose) in enumerate(tqdm(self.data.val, desc='batch', leave=False, position=1)):
+            for i, (pose_number, audio, pose) in enumerate(tqdm(self.data.val, desc='batch', leave=False, position=1)):
                 audio, pose = self.device(audio), self.device(pose)
                 results, pred_pose = self.loop(audio, pose, 'val')
                 if i < 3:

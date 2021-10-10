@@ -19,6 +19,7 @@ class AudioToPose(nn.Module):
 
         audio_encoder_mults = [1, 2, 1, 2, 1, 2, 1, 1]
         channel_mults = [1 if encoder_dim == 1 else 64, 2, 1, 2, 1, 1, 1, 1]
+
         self.encoder_dim = encoder_dim
         self.audio_encoder_down_factors, self.channel_factors = [1], [None, [64], [1]][encoder_dim]
         for m, n in zip(audio_encoder_mults, channel_mults):
@@ -37,20 +38,16 @@ class AudioToPose(nn.Module):
                             downsample=(audio_encoder_mults[i] > 1), input_shape=sizes[i],
                             output_shape=sizes[i + 1]) for i in range(len(sizes) - 1)])
 
-        if encoder_dim == 2:
-            self.resize = lambda t: resize(t, out_shape=(frames, 1), interp_method=interp_methods.linear).squeeze(-1)
-        elif encoder_dim == 1:
-            self.resize = lambda t: resize(t, out_shape=(frames,), interp_method=interp_methods.linear)
-
-
+        self.set_resize(frames)
         self.unet_encoder_labels = [5, 6, 7, 8, 9, 10]
 
         self.unet_encoder = nn.ModuleList([
-            nn.Sequential(
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
-                               input_shape=(frames,)),
-                ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+            nn.Sequential(OrderedDict(
+                ('conv1', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(frames,))),
+                ('conv2', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
+                               input_shape=(frames,)))
+            )),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
                                            input_shape=(frames,), output_shape=(cdiv(frames, 2),)),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
@@ -59,14 +56,16 @@ class AudioToPose(nn.Module):
                                             input_shape=(cdiv(frames, 4),), output_shape=(cdiv(frames, 8),)),
             ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
                                            input_shape=(cdiv(frames, 8),), output_shape=(cdiv(frames, 16),)),
-            nn.Sequential(ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
+            nn.Sequential(
+                OrderedDict('conv1', ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=True,
                                                          input_shape=(cdiv(frames, 16),),
-                                                         output_shape=(cdiv(frames, 32),)),
-                                          nn.Upsample(size=(cdiv(frames, 16),)))
+                                                         output_shape=(cdiv(frames, 32),))),
+                OrderedDict('upsample1', nn.Upsample(size=(cdiv(frames, 16),))))
         ])
         self.unet_decoder_labels = [9, 8, 7, 6, 5]
         self.unet_decoder = nn.ModuleList([
             nn.Sequential(
+                OrderedDict()
                 ConvNormRelu1d(in_channels=256, out_channels=256, leaky=True, downsample=False,
                                input_shape=(cdiv(frames, 16),)),
                 nn.Upsample(size=(cdiv(frames, 8),))),
@@ -101,11 +100,23 @@ class AudioToPose(nn.Module):
         self.apply(weight_init)
 
 
-
     def set_input_shape(self, shape: Tuple[int, int]):
-        for conv_block in self.audio_encoder:
-            conv_block.compute_padding(shape)
-            shape = conv_block.out_shape(shape)
+        h, w = shape
+        if encoder_dim == 1:
+            sizes = [(cdiv(h, factor),) for factor in self.audio_encoder_down_factors]
+        else:
+            sizes = [(cdiv(h, factor), cdiv(w, factor)) for factor in self.audio_encoder_down_factors]
+        for i in range(len(sizes) - 1):
+            conv_block.reset_shape(sizes[i], sizes[i + 1])
+
+    def set_output_shape(self, pose_dof, frames):
+
+
+    def set_resize(self, frames):
+        if encoder_dim == 2:
+            self.resize = lambda t: resize(t, out_shape=(frames, 1), interp_method=interp_methods.linear).squeeze(-1)
+        elif encoder_dim == 1:
+            self.resize = lambda t: resize(t, out_shape=(frames,), interp_method=interp_methods.linear)
 
     def forward(self, x: Tensor) -> Tensor:
         if self.encoder_dim == 2:

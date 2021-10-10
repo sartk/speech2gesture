@@ -16,7 +16,7 @@ class WavBVHDataset(Dataset):
 
     def __getitem__(self, index) -> T_co:
         item = torch.load(self.dataset[index])
-        return item['audio'].float(), item['gesture'].permute(1, 0).float()
+        return index, item['audio'].float(), item['gesture'].permute(1, 0).float()
 
     def __len__(self):
         return min(len(self.dataset), self.size)
@@ -65,7 +65,8 @@ class WavBVHDataset(Dataset):
             frame_window, frame_step = self.gesture_fps * self.clip_duration, self.gesture_fps * self.clip_duration // 2
             for i, t in enumerate(windows):
                 dest = self.save_dir / f'{name}_{i}.pt'
-                audio = self.mel_spec.apply(librosa.load(audio_file, offset=t, duration=self.clip_duration, mono=True))
+                a = librosa.load(audio_file, offset=t, duration=self.clip_duration, mono=True)
+                audio = self.mel_spec.apply(a)
                 gesture = exp_map[frame:frame + frame_window, :]
                 if gesture.shape[0] != frame_window:
                     print('skipping', dest)

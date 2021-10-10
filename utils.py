@@ -43,6 +43,13 @@ def str2bool(v):
     else:
         raise ArgumentTypeError('Boolean value expected.')
 
+def str2set(v):
+    if isinstance(v, set) or isinstance(v, list) or isisinstance(v, tuple):
+        return set(map(int, v))
+    elif isinstance(v, str):
+        return set(map(int, str.split(',')))
+    else:
+        raise ArgumentTypeError('Iterable value expected.')
 
 def set_up_args() -> ArgumentParser:
     """
@@ -56,13 +63,15 @@ def set_up_args() -> ArgumentParser:
     parser.add_argument('--dataset', type=str, default='WavBVH', choices=['WavBVH', 'WavKeypoints'])
     parser.add_argument('--lambda_g', type=float, default=1)
     parser.add_argument('--experiments', type=Path, default='E:/Users/sarthak/Experiments/speech2gesture/')
-    parser.add_argument('--epochs', type=int, default=500)
-    parser.add_argument('--patience', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=10000)
+    parser.add_argument('--patience', type=int, default=300)
     parser.add_argument('--data', type=Path, default='E:/Users/sarthak/Data/speech2gesture/')
     parser.add_argument('--precision', type=str, default='full')
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--encoder_dim', type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--train_pose_numbers', type=str2set, default=set(10, 30, 50))
+    parser.add_argument('--val_pose_numbers', type=str2set, default=set(10, 30, 150))
     parser.add_argument('--use_discriminator', type=str2bool, default=False)
     parser.add_argument('--overfit_test', type=str2bool, default=False)
     return parser
