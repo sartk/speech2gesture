@@ -23,7 +23,7 @@ class GesturePrediction:
 
 
     def apply(self, audio_file, bvh_file):
-        cache = self.cache / bvh_file.name + '.pt'
+        cache = self.cache / (bvh_file.name + '.pt')
         if cache.is_file():
             audio_encoding, real_pose = torch.load(cache)
         else:
