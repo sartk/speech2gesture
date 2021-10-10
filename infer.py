@@ -6,6 +6,8 @@ from argparse import Namespace
 import torch.nn as nn
 import librosa
 
+d = 2
+
 class GesturePrediction:
 
     def __init__(self, checkpoint):
@@ -36,7 +38,7 @@ class GesturePrediction:
             torch.save((audio_encoding, real_pose), cache)
         if self.generator is None or audio_encoding.shape[-2:] != self.last_audio_shape:
             self.generator = AudioToPose(input_shape=audio_encoding.shape[-2:], pose_shape=real_pose.shape[-2:],
-                                         encoder_dim=1).cuda()
+                                         encoder_dim=d).cuda()
             self.generator.load_state_dict(self.checkpoint['model_state_dict']['generator'])
             self.generator.float()
             self.generator.eval()
@@ -63,7 +65,11 @@ class GesturePrediction:
         losses.mse = nn.MSELoss()
         return losses
 
-gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210929-211434-1d-unet-666343a/checkpoints/best.pt')
+if d == 1:
+    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210929-211434-1d-unet-666343a/checkpoints/best.pt')
+else:
+    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210930-103450-2d-unet/checkpoints/best.pt')
+
 audio = Path('E:/Users/Sarthak/Data/speech2gesture/raw_data/val/Audio/Recording_018.wav')
 bvh = Path('E:/Users/Sarthak/Data/speech2gesture/raw_data/val/Motion/Recording_018.bvh')
 
