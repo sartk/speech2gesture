@@ -15,7 +15,7 @@ class GesturePrediction:
         self.discriminator = None
         self.last_audio_shape = None
         self.checkpoint = torch.load(checkpoint)
-        self.infer = checkpoint.parent / 'infer/'
+        self.infer = checkpoint.parent.parent / 'infer/'
         self.infer.mkdir(exist_ok=True)
         self.output = self.infer / 'output/'
         self.output.mkdir(exist_ok=True)
