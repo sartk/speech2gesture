@@ -49,3 +49,9 @@ class GesturePrediction:
         losses.l1 = nn.L1Loss()
         losses.mse = nn.MSELoss()
         return losses
+
+gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210929-211434-1d-unet-666343a/checkpoints/best.pt')
+audio = Path('E:/Users/Sarthak/Data/speech2gesture/raw_data/val/Audio/Recording_018.wav')
+bvh = Path('E:/Users/Sarthak/Data/speech2gesture/raw_data/val/Motion/Recording_018.bvh')
+
+gen.apply(audio, bvh)
