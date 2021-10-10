@@ -86,7 +86,7 @@ class BVHtoMocapData(Transform):
         with open('mocap_header.txt', 'r') as f:
             header = f.read()
         content = header + 'MOTION\n' + f'Frames: {mocap_data.shape[0]}\n' + 'Frame Time:     0.0166667'
-        content += '\n' + '\n'.join(map(lambda row: ' '.join(map(str, row)), mocap_data.around(4))) + '\n'
+        content += '\n' + '\n'.join(map(lambda row: ' '.join(map(str, row)), np.around(mocap_data, 4)))+ '\n'
         return content
 
 
