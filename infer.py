@@ -12,6 +12,7 @@ class GesturePrediction:
         self.mocap_pipeline = Pipeline([BVHtoMocapData, MocapDataToExpMap])
         self.mel_spec = AudioToLogMelSpec()
         self.generator = None
+        self.losses = self.get_losses()
         self.discriminator = None
         self.last_audio_shape = None
         self.checkpoint = torch.load(checkpoint)
