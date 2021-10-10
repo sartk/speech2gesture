@@ -30,7 +30,7 @@ class GesturePrediction:
         else:
             audio_encoding = torch.from_numpy(self.mel_spec.apply(librosa.load(audio_file, mono=True))).unsqueeze(
                 0).cuda()
-            real_pose = torch.from_numpy(self.mocap_pipeline.apply(bvh_file)).unsqueeze(0).cuda()
+            real_pose = torch.from_numpy(self.mocap_pipeline.apply(bvh_file)).permute(1, 0).unsqueeze(0).cuda()
             torch.save((audio_encoding, real_pose), cache)
         if self.generator is None or audio_encoding.shape[-2:] != self.last_audio_shape:
             self.generator = AudioToPose(input_shape=audio_encoding.shape[-2:], pose_shape=real_pose.shape[-2:],
