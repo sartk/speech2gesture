@@ -64,6 +64,7 @@ class Trainer:
         self.log = utils.logger(self.log_file)
         self.best_checkpoint: Union[Path, None] = None
         self.checkpoint = dict()
+        self.checkpoint['args'] = self.args
 
     def check_required_args(self) -> None:
         """

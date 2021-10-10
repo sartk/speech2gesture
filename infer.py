@@ -2,6 +2,7 @@ import torch
 from model import AudioToPose, PoseDiscriminator
 from transforms import BVHtoMocapData, MocapDataToExpMap, Pipeline, AudioToLogMelSpec
 from pathlib import Path
+from argparse import Namespace
 import librosa
 
 class GesturePrediction:
@@ -33,7 +34,7 @@ class GesturePrediction:
             torch.save((audio_encoding, real_pose), cache)
         if self.generator is None or audio_encoding.shape[-2:] != self.last_audio_shape:
             self.generator = AudioToPose(input_shape=audio_encoding.shape[-2:], pose_shape=real_pose.shape[-2:],
-                                         encoder_dim=args.encoder_dim)
+                                         encoder_dim=1)
             self.generator.load_state_dict(self.checkpoint['model_state_dict']['generator'])
             self.generator.float()
             self.generator.eval()
