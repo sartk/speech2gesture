@@ -3,6 +3,7 @@ from model import AudioToPose, PoseDiscriminator
 from transforms import BVHtoMocapData, MocapDataToExpMap, Pipeline, AudioToLogMelSpec
 from pathlib import Path
 from argparse import Namespace
+import torch.nn as nn
 import librosa
 
 class GesturePrediction:
