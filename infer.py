@@ -45,7 +45,7 @@ class GesturePrediction:
             # self.discriminator.eval()
 
         pred_pose = self.generator(audio_encoding)
-        print(losses.l1(pred_pose, real_pose))
+        print(self.losses.l1(pred_pose, real_pose))
         bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
 
         with open(self.output / (audio_file.name.split('.')[0] + '.bvh'), 'w+') as f:
