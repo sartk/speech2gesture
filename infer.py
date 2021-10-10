@@ -16,11 +16,21 @@ class GesturePrediction:
         self.checkpoint = torch.load(checkpoint)
         self.infer = checkpoint.parent / 'infer/'
         self.infer.mkdir(exist_ok=True)
+        self.output = self.infer / 'output/'
+        self.output.mkdir(exist_ok=True)
+        self.cache = self.infer / 'cache/'
+        self.cache.mkdir(exist_ok=True)
 
 
     def apply(self, audio_file, bvh_file):
-        real_pose = torch.from_numpy(self.mocap_pipeline.apply(bvh_file)).unsqueeze(0).cuda()
-        audio_encoding = torch.from_numpy(self.mel_spec.apply(librosa.load(audio_file, mono=True))).unsqueeze(0).cuda()
+        cache = self.cache / bvh_file.name + '.pt'
+        if cache.is_file():
+            audio_encoding, real_pose = torch.load(cache)
+        else:
+            audio_encoding = torch.from_numpy(self.mel_spec.apply(librosa.load(audio_file, mono=True))).unsqueeze(
+                0).cuda()
+            real_pose = torch.from_numpy(self.mocap_pipeline.apply(bvh_file)).unsqueeze(0).cuda()
+            torch.save((audio_encoding, real_pose), cache)
         if self.generator is None or audio_encoding.shape[-2:] != self.last_audio_shape:
             self.generator = AudioToPose(input_shape=audio_encoding.shape[-2:], pose_shape=real_pose.shape[-2:],
                                          encoder_dim=args.encoder_dim)
@@ -37,7 +47,7 @@ class GesturePrediction:
         print(losses.l1(pred_pose, real_pose))
         bvh = self.mocap_pipeline.invert(pred_pose[0].permute(1, 0).detach().cpu().numpy())
 
-        with open(infer / (audio_file.name.split('.')[0] + '.bvh'), 'w+') as f:
+        with open(self.output / (audio_file.name.split('.')[0] + '.bvh'), 'w+') as f:
             f.write(bvh)
 
     @staticmethod
