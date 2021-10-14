@@ -20,7 +20,7 @@ class GesturePrediction:
         self.last_audio_shape = None
         self.checkpoint = torch.load(checkpoint)
         self.infer = checkpoint.parent.parent / 'infer/'
-        self.infer.mkdir(exist_ok=True)
+        self.infer.mkdir(exist_ok=True, parent=True)
         self.output = self.infer / 'output/'
         self.output.mkdir(exist_ok=True)
         self.cache = self.infer / 'cache/'
@@ -67,7 +67,7 @@ class GesturePrediction:
 
 if d == 1:
     #gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210929-211434-1d-unet-666343a/checkpoints/best.pt')
-    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20211007-101505/checkpoints/best.pt')
+    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20211007-144056/checkpoints/best.pt')
 else:
     gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210930-103450-2d-unet/checkpoints/best.pt')
 
