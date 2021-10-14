@@ -6,7 +6,7 @@ from argparse import Namespace
 import torch.nn as nn
 import librosa
 
-d = 2
+d = 1
 
 class GesturePrediction:
 
@@ -67,7 +67,7 @@ class GesturePrediction:
 
 if d == 1:
     #gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210929-211434-1d-unet-666343a/checkpoints/best.pt')
-    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20211007-101505/tensorboard')
+    gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20211007-101505/checkpoints/best.pt')
 else:
     gen = GesturePrediction('E:/Users/Sarthak/Experiments/speech2gesture/20210930-103450-2d-unet/checkpoints/best.pt')
 
